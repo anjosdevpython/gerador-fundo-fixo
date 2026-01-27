@@ -105,7 +105,16 @@ const App = () => {
     const savedHeader = localStorage.getItem('fundo_header');
     const savedTransactions = localStorage.getItem('fundo_transactions');
 
-    if (savedHeader) setHeaderData(JSON.parse(savedHeader));
+    if (savedHeader) {
+      const parsedHeader = JSON.parse(savedHeader);
+      // Sempre resetar Loja e Detentor ao carregar para forçar seleção manual
+      setHeaderData({
+        ...parsedHeader,
+        loja: '',
+        detentor: ''
+      });
+    }
+
     if (savedTransactions) {
       const data = JSON.parse(savedTransactions);
       setTransactions(data.map(t => ({ ...t, attachments: [] })));
@@ -238,6 +247,13 @@ const App = () => {
 
     if (headerData.fundoDisponibilizado <= 0) {
       alert("O valor do fundo disponibilizado deve ser maior que zero.");
+      return false;
+    }
+
+    // Validação de Anexos Obrigatórios por lançamento
+    const lancamentosSemAnexo = transactions.filter(t => t.attachments.length === 0);
+    if (lancamentosSemAnexo.length > 0) {
+      alert(`Todos os lançamentos devem possuir pelo menos um comprovante anexado.\nFavor verificar os itens: ${lancamentosSemAnexo.map(t => t.id).join(', ')}`);
       return false;
     }
 
@@ -430,7 +446,7 @@ const App = () => {
                     <th className="px-6 py-4">Descrição e Fornecedor</th>
                     <th className="px-6 py-4 w-28 text-center">Nº Doc</th>
                     <th className="px-6 py-4 w-40 text-right">Valor</th>
-                    <th className="px-6 py-4 w-64 print:hidden">Comprovantes</th>
+                    <th className="px-6 py-4 w-64 print:hidden">Comprovantes <span className="text-red-500">*</span></th>
                     <th className="px-6 py-4 w-12 print:hidden"></th>
                   </tr>
                 </thead>
