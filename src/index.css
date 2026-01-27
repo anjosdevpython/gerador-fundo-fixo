@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background-color: rgb(248 250 252);
+  /* bg-slate-50 */
+}
+
+@media print {
+  body {
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  section {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: 1px solid #e2e8f0 !important;
+    margin-bottom: 2rem !important;
+  }
+
+  input {
+    border: none !important;
+    background: transparent !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #f1f5f9 !important;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}
+
+/* Scrollbar styles from fundo.jsx */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
