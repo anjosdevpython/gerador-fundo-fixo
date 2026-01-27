@@ -30,7 +30,8 @@ import {
   ExternalLink,
   ChevronRight,
   Menu,
-  Home
+  Home,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
@@ -413,12 +414,12 @@ const HistoryDashboard = ({ records }) => {
             <History className="text-red-600" size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-slate-800">Histórico de Registros</h1>
-            <p className="text-slate-500 text-xs font-medium">Relatórios enviados por este navegador</p>
+            <h1 className="text-xl font-black text-slate-800">Painel de Registros</h1>
+            <p className="text-slate-500 text-xs font-medium">Histórico global de prestações sincronizadas</p>
           </div>
         </div>
       </header>
-
+      {/* ... Rest logic remains same, just styling refinements if needed ... */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -463,10 +464,70 @@ const HistoryDashboard = ({ records }) => {
   );
 };
 
+// --- Componente: Login Admin ---
+const LoginPage = ({ onLogin }) => {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (password === "Minipreco@123") {
+      onLogin();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200 max-w-md w-full"
+      >
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <div className="p-4 bg-slate-100 rounded-full text-slate-400">
+            <Lock size={32} />
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-black text-slate-800">Acesso Restrito</h2>
+            <p className="text-slate-400 text-sm">Digite a senha administrativa</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="password"
+            autoFocus
+            placeholder="Senha de Acesso"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={`w-full bg-slate-50 border-2 ${error ? 'border-red-500' : 'border-slate-100'} rounded-2xl px-6 py-4 text-center text-lg font-bold outline-none focus:border-red-500 transition-all`}
+          />
+          {error && <p className="text-red-500 text-center text-xs font-bold animate-bounce">Senha incorreta!</p>}
+          <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-black transition-all active:scale-95">
+            ENTRAR NO PAINEL
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
 // --- Componente Raiz (Navegação) ---
 const App = () => {
   const [history, setHistory] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Wrapper para proteção de rota
+  const ProtectedRoute = ({ children }) => {
+    if (!isAdmin) {
+      return <LoginPage onLogin={() => setIsAdmin(true)} />;
+    }
+    return children;
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('fundo_history');
@@ -504,9 +565,6 @@ const App = () => {
             <Link to="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-white/10 transition-all font-bold text-sm group">
               <Plus size={18} className="text-red-500 group-hover:scale-110 transition-transform" /> Novo Lançamento
             </Link>
-            <Link to="/registros" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-white/10 transition-all font-bold text-sm group">
-              <History size={18} className="text-slate-400 group-hover:rotate-[-20deg] transition-transform" /> Histórico Global
-            </Link>
           </div>
 
           <div className="pt-8 border-t border-white/5 space-y-4">
@@ -528,15 +586,27 @@ const App = () => {
           <div className="p-4 md:p-10 max-w-6xl mx-auto">
             <Routes>
               <Route path="/" element={<Generator onSaveRecord={saveToHistory} />} />
-              <Route path="/registros" element={<HistoryDashboard records={history} />} />
+              <Route
+                path="/registros"
+                element={
+                  <ProtectedRoute>
+                    <HistoryDashboard records={history} />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </div>
 
-          <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60">
+          <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <p className="text-slate-400 text-xs font-medium tracking-wide">Desenvolvido por: <span className="text-red-600 font-black">Allan Anjos</span></p>
             <div className="flex items-center justify-center gap-1.5 text-slate-300 text-[9px] font-bold uppercase tracking-widest">
               <Send size={10} /> Sincronizado via SharePoint/Power Automate 🍏
             </div>
+
+            {/* Subtle Admin Link */}
+            <Link to="/registros" className="absolute bottom-4 right-4 text-slate-200/50 hover:text-slate-400 transition-colors">
+              <Lock size={12} title="Painel Admin" />
+            </Link>
           </footer>
         </main>
       </div>
