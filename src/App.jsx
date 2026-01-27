@@ -1,5 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
+  HashRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useLocation
+} from 'react-router-dom';
+import {
   Plus,
   Trash2,
   Printer,
@@ -17,12 +24,21 @@ import {
   Download,
   RefreshCcw,
   Eye,
-  FileArchive
+  FileArchive,
+  History,
+  Send,
+  ExternalLink,
+  ChevronRight,
+  Menu,
+  Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+
+// --- Configurações SharePoint ---
+const SHAREPOINT_WEBHOOK_URL = ""; // Usuário deve preencher no futuro ou via painel
 
 const STORES = [
   { id: '1', name: 'Mini | Santa | Loja 1', manager: 'Jaqueline' },
@@ -38,7 +54,7 @@ const STORES = [
   { id: '7', name: 'Mini | Fanny | Loja 7', manager: 'Ivan Nícássio' },
   { id: '8', name: 'Mini | Fazenda Rio Grande | Loja 8', manager: 'Sheila' },
   { id: '8', name: 'Salvados | Fazenda Rio Grande | Loja 8', manager: 'Sheila' },
-  { id: '10', name: 'Mini | Xaxim | Loja 10', manager: 'Maria Franciely' },
+  { id: '10', name: 'Mini | Xaxim | Lo_ja 10', manager: 'Maria Franciely' },
   { id: '10', name: 'Salvados | Xaxim | Loja 10', manager: 'Maria Franciely' },
   { id: '11', name: 'Mini | Fazendinha | Loja 11', manager: 'Jorge Belotto' },
   { id: '11', name: 'Salvados | Fazendinha | Loja 11', manager: 'Gabriele Fernandes' },
@@ -61,610 +77,7 @@ const STORES = [
   { id: '306', name: 'Mini | CD ES | Loja 306', manager: 'Dani Nascimento' },
   { id: '307', name: 'Mini | Glória | Loja 307', manager: 'Rackilane' },
   { id: '308', name: 'Mini | Day by Day | Loja 308', manager: 'Namar' },
-  // RDS Units
-  { id: '1', name: 'RDS | Santa Felicidade | Loja 1', manager: 'Valquiria Aparecida de Oliveira Goncalves' },
-  { id: '2', name: 'RDS | Av. das Torres | Loja 2 | Gerente', manager: 'Lucas Tiago Ferreira Pego' },
-  { id: '2', name: 'RDS | Av. das Torres | Loja 2 | Líder', manager: 'Rosenilda de Oliveira Tome Martins' },
-  { id: '4', name: 'RDS | Pinhais | Loja 4 | Gerente', manager: 'Carlos Eduardo Lukaszevski' },
-  { id: '4', name: 'RDS | Pinhais | Loja 4 | Líder', manager: 'Robi Leandro Pereira Arruda Ueque' },
-  { id: '6', name: 'RDS | Paranaguá | Loja 6 | Gerente', manager: 'Dennis' },
-  { id: '6', name: 'RDS | Paranaguá | Loja 6 | Líder', manager: 'Joice Maiara Correa Sampaio' },
-  { id: '8', name: 'RDS | Fazenda | Loja 8 | Gerente', manager: 'Elaine Graciele Massaneiro do Nascimento' },
-  { id: '8', name: 'RDS | Fazenda | Loja 8 | Líder', manager: 'Dirlene Aparecida Freitas dos Santos' },
-  { id: '9', name: 'RDS | Sítio Cercado | Loja 9', manager: 'Bruno Adriano Gomes Mendes' },
-  { id: '11', name: 'RDS | Fazendinha | Loja 11', manager: 'Gabriele Fernandes de Lima' },
-  { id: '14', name: 'RDS | Colombo | Loja 14', manager: 'Carolina Martins Floriano' },
-  { id: '17', name: 'RDS | Xaxim | Loja 17 | Gerente', manager: 'Maria Francielly Vieira de Cerqueira' },
-  { id: '17', name: 'RDS | Xaxim | Loja 17 | Líder', manager: 'Eduardo da Silva Canha Machado' },
-  { id: '18', name: 'RDS | Fanny | Loja 18', manager: 'Luiz Alberto Nogueira Traldi' },
-  { id: '19', name: 'RDS | Araucária | Loja 19 | Gerente', manager: 'Orli' },
-  { id: '19', name: 'RDS | Araucária | Lo_ja 19 | Líder', manager: 'Janaina Aparecida Pereira' },
 ];
-
-const App = () => {
-  // --- Estados da Aplicação ---
-  const initialHeader = {
-    detentor: '',
-    cpf: '',
-    loja: '',
-    depto: '',
-    gerente: '',
-    chavePix: '',
-    fundoDisponibilizado: 0,
-    dataPrestacao: new Date().toISOString().split('T')[0]
-  };
-
-  const [headerData, setHeaderData] = useState(initialHeader);
-  const [transactions, setTransactions] = useState([]);
-
-  const [isProcessingZip, setIsProcessingZip] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-
-  // --- Persistence (Load) ---
-  useEffect(() => {
-    const savedHeader = localStorage.getItem('fundo_header');
-    const savedTransactions = localStorage.getItem('fundo_transactions');
-
-    if (savedHeader) {
-      const parsedHeader = JSON.parse(savedHeader);
-      // Sempre resetar Loja e Detentor ao carregar para forçar seleção manual
-      setHeaderData({
-        ...parsedHeader,
-        loja: '',
-        detentor: ''
-      });
-    }
-
-    if (savedTransactions) {
-      const data = JSON.parse(savedTransactions);
-      setTransactions(data.map(t => ({ ...t, attachments: [] })));
-    }
-  }, []);
-
-  // --- Persistence (Save) ---
-  useEffect(() => {
-    localStorage.setItem('fundo_header', JSON.stringify(headerData));
-  }, [headerData]);
-
-  useEffect(() => {
-    const txToSave = transactions.map(({ attachments, ...rest }) => rest);
-    localStorage.setItem('fundo_transactions', JSON.stringify(txToSave));
-  }, [transactions]);
-
-  // --- Lógica de Cálculos ---
-  const totals = useMemo(() => {
-    const utilizado = transactions.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
-    const saldo = headerData.fundoDisponibilizado - utilizado;
-    return { utilizado, saldo };
-  }, [transactions, headerData.fundoDisponibilizado]);
-
-  // --- Handlers de Transação ---
-  const addTransaction = () => {
-    const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
-    setTransactions([...transactions, {
-      id: newId,
-      data: new Date().toISOString().split('T')[0],
-      motivo: '',
-      fornecedor: '',
-      nf: '',
-      valor: 0,
-      attachments: []
-    }]);
-  };
-
-  const updateTransaction = (id, field, value) => {
-    setTransactions(transactions.map(t => t.id === id ? { ...t, [field]: value } : t));
-  };
-
-  const removeTransaction = (id) => {
-    if (window.confirm("Deseja realmente excluir este lançamento?")) {
-      setTransactions(transactions.filter(t => t.id !== id));
-    }
-  };
-
-  const resetForm = () => {
-    if (window.confirm("Deseja limpar todos os dados do formulário? Isso não pode ser desfeito.")) {
-      setHeaderData(initialHeader);
-      setTransactions([]);
-      localStorage.clear();
-    }
-  };
-
-  // --- Gestão de Anexos ---
-  const handleFileChange = (e, transactionId) => {
-    const files = Array.from(e.target.files);
-    setTransactions(prev => prev.map(t => {
-      if (t.id === transactionId) {
-        return { ...t, attachments: [...t.attachments, ...files] };
-      }
-      return t;
-    }));
-  };
-
-  const removeAttachment = (tId, fileIndex) => {
-    setTransactions(prev => prev.map(t => {
-      if (t.id === tId) {
-        const newAttachments = [...t.attachments];
-        newAttachments.splice(fileIndex, 1);
-        return { ...t, attachments: newAttachments };
-      }
-      return t;
-    }));
-  };
-
-  const openPreview = (file) => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => setPreviewImage(e.target.result);
-      reader.readAsDataURL(file);
-    } else {
-      alert("Pré-visualização disponível apenas para imagens.");
-    }
-  };
-
-  // --- Geração de PDF ---
-  const generatePDFReport = async () => {
-    const element = document.getElementById('print-area');
-    if (!element) return null;
-
-    // Ajustes temporários para o print
-    const originalStyle = element.style.cssText;
-    element.style.padding = '20px';
-    element.style.background = 'white';
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-    });
-
-    element.style.cssText = originalStyle;
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    return pdf.output('blob');
-  };
-
-  const validateHeader = () => {
-    const requiredFields = [
-      { key: 'detentor', label: 'Detentor' },
-      { key: 'cpf', label: 'CPF' },
-      { key: 'loja', label: 'Loja / Unidade' },
-      { key: 'chavePix', label: 'Chave PIX' },
-      { key: 'depto', label: 'Departamento' }
-    ];
-
-    const missingFields = requiredFields.filter(f => !headerData[f.key]);
-
-    if (missingFields.length > 0) {
-      alert(`Por favor, preencha os campos obrigatórios:\n- ${missingFields.map(f => f.label).join('\n- ')}`);
-      return false;
-    }
-
-    if (headerData.fundoDisponibilizado <= 0) {
-      alert("O valor do fundo disponibilizado deve ser maior que zero.");
-      return false;
-    }
-
-    // Validação de Anexos Obrigatórios por lançamento
-    const lancamentosSemAnexo = transactions.filter(t => t.attachments.length === 0);
-    if (lancamentosSemAnexo.length > 0) {
-      alert(`Todos os lançamentos devem possuir pelo menos um comprovante anexado.\nFavor verificar os itens: ${lancamentosSemAnexo.map(t => t.id).join(', ')}`);
-      return false;
-    }
-
-    return true;
-  };
-
-  const handlePrint = () => {
-    if (validateHeader()) {
-      window.print();
-    }
-  };
-
-  // --- Geração de ZIP (Relatório PDF + Anexos) ---
-  const generateZipPackage = async () => {
-    if (!validateHeader()) return;
-
-    if (transactions.length === 0) {
-      alert("Adicione pelo menos um lançamento.");
-      return;
-    }
-
-    setIsProcessingZip(true);
-    try {
-      const zip = new JSZip();
-
-      // 1. Gerar o PDF do Relatório
-      const pdfBlob = await generatePDFReport();
-      if (pdfBlob) {
-        zip.file("relatorio_prestacao.pdf", pdfBlob);
-      }
-
-      // 2. Adicionar Anexos em pasta dedicada
-      const attachmentsFolder = zip.folder("comprovantes");
-
-      for (const [idx, t] of transactions.entries()) {
-        for (const [fIdx, file] of t.attachments.entries()) {
-          const cleanMotivo = t.motivo.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'sem_motivo';
-          const fileName = `item_${idx + 1}_${cleanMotivo}_${fIdx}_${file.name}`;
-          attachmentsFolder.file(fileName, file);
-        }
-      }
-
-      // 3. Gerar e baixar o ZIP
-      const content = await zip.generateAsync({ type: "blob" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(content);
-      link.download = `PRESTACAO_${headerData.loja.replace(/[^a-z0-9]/gi, '_')}_${headerData.dataPrestacao}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } catch (error) {
-      console.error("Erro ao gerar ZIP:", error);
-      alert("Erro ao gerar o pacote ZIP. Verifique o console.");
-    } finally {
-      setIsProcessingZip(false);
-    }
-  };
-
-  const handleHeaderChange = (e) => {
-    let { name, value } = e.target;
-
-    // Máscara Simples para CPF
-    if (name === 'cpf') {
-      value = value.replace(/\D/g, '')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-        .substring(0, 14);
-    }
-
-    if (name === 'loja') {
-      const selectedStore = STORES.find(s => s.name === value);
-      if (selectedStore) {
-        setHeaderData(prev => ({
-          ...prev,
-          loja: value,
-          detentor: selectedStore.manager.toUpperCase()
-        }));
-        return;
-      }
-    }
-
-    setHeaderData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto space-y-6">
-
-        {/* HEADER */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 print:hidden">
-          <div className="flex items-center gap-4 md:gap-6">
-            <img src="./logo.png" alt="Mini Preço" className="h-10 md:h-12 w-auto object-contain" />
-            <div className="h-10 w-px bg-slate-200 hidden md:block"></div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Prestação de Contas</h1>
-              <p className="text-slate-500 font-medium text-[10px] md:text-sm">Controle de Fundo Fixo Profissional</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 md:gap-3">
-            <button
-              onClick={resetForm}
-              className="flex-1 md:flex-none group flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold px-3 py-2.5 rounded-xl transition-all text-xs md:text-sm shadow-sm"
-            >
-              <RefreshCcw size={16} className="group-hover:rotate-180 transition-transform duration-500" /> Reiniciar
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2.5 rounded-xl transition-all text-xs md:text-sm shadow-md"
-            >
-              <Printer size={16} /> Relatório
-            </button>
-            <button
-              onClick={generateZipPackage}
-              disabled={isProcessingZip}
-              className="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-200 text-white font-black px-6 py-3 rounded-xl transition-all shadow-lg shadow-red-100 active:scale-95 text-xs md:text-sm"
-            >
-              {isProcessingZip ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
-              Exportar Pacote ZIP
-            </button>
-          </div>
-        </header>
-
-        <div id="print-area" className="space-y-6 bg-white p-8 rounded-2xl print:p-0">
-          {/* DASHBOARD */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid-cols-3">
-            <StatCard
-              label="Fundo Disponibilizado"
-              value={formatCurrency(headerData.fundoDisponibilizado)}
-              icon={<Calculator className="text-red-600" />}
-              trend="Total Alocado"
-            />
-            <StatCard
-              label="Total Utilizado"
-              value={formatCurrency(totals.utilizado)}
-              icon={<AlertCircle className="text-amber-600" />}
-              trend={`${Math.round((totals.utilizado / headerData.fundoDisponibilizado) * 100) || 0}% consumido`}
-              trendColor={totals.utilizado > headerData.fundoDisponibilizado ? "text-red-500" : "text-amber-500"}
-            />
-            <StatCard
-              label="Saldo Remanescente"
-              value={formatCurrency(totals.saldo)}
-              icon={<CheckCircle2 className="text-emerald-600" />}
-              colorClass={totals.saldo < 0 ? "text-red-700 bg-red-50 border-red-200" : "text-emerald-700 bg-emerald-50 border-emerald-200"}
-              trend={totals.saldo < 0 ? "Excedente" : "Disponível"}
-            />
-          </div>
-
-          {/* INFO GERAIS */}
-          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6 print:border">
-            <div className="flex items-center gap-2 text-slate-400 mb-2">
-              <User size={16} />
-              <h2 className="text-xs font-black uppercase tracking-widest">Informações do Detentor</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <InputField label="Detentor" name="detentor" required value={headerData.detentor} onChange={handleHeaderChange} placeholder="Nome Completo" />
-              <InputField label="CPF" name="cpf" required value={headerData.cpf} onChange={handleHeaderChange} placeholder="000.000.000-00" />
-              <InputField label="Loja / Unidade" name="loja" required type="select" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
-              <InputField label="Data Prestação" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={handleHeaderChange} icon={<Calendar size={14} />} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InputField label="Chave PIX (Reembolso)" name="chavePix" required value={headerData.chavePix} onChange={handleHeaderChange} icon={<CreditCard size={14} />} />
-              <InputField label="Departamento" name="depto" required value={headerData.depto} onChange={handleHeaderChange} />
-              <InputField label="Ajustar Fundo (R$)" name="fundoDisponibilizado" required type="number" value={headerData.fundoDisponibilizado} onChange={handleHeaderChange} />
-            </div>
-          </section>
-
-          {/* TABELA DE DESPESAS */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border">
-            <div className="p-4 md:p-5 border-b flex justify-between items-center bg-slate-50/50">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-7 md:h-8 bg-red-600 rounded-full"></div>
-                <h2 className="font-black text-slate-800 uppercase text-[10px] md:text-xs tracking-widest">Detalhamento de Gastos</h2>
-              </div>
-              <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-[10px] md:text-xs bg-red-600 text-white font-black px-4 py-2.5 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
-                <Plus size={16} /> NOVO LANÇAMENTO
-              </button>
-            </div>
-
-            {/* Mobile Cards (sc only) */}
-            <div className="md:hidden divide-y divide-slate-100">
-              {transactions.length === 0 && (
-                <div className="p-8 text-center text-slate-400 italic text-sm">Nenhuma despesa lançada.</div>
-              )}
-              {transactions.map((item) => (
-                <div key={item.id} className="p-4 space-y-4 bg-white hover:bg-slate-50 transition-colors">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase">Item #{item.id}</p>
-                      <input
-                        type="text"
-                        placeholder="Motivo do gasto"
-                        value={item.motivo}
-                        onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())}
-                        className="w-full text-base font-bold outline-none bg-transparent text-slate-800 placeholder:text-slate-300 focus:text-red-600"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Fornecedor"
-                        value={item.fornecedor}
-                        onChange={(e) => updateTransaction(item.id, 'fornecedor', e.target.value)}
-                        className="w-full text-xs text-slate-500 font-medium outline-none bg-transparent focus:text-slate-600 uppercase"
-                      />
-                    </div>
-                    <button onClick={() => removeTransaction(item.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex-shrink-0">
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black text-slate-400 uppercase">Data</label>
-                      <input
-                        type="date"
-                        value={item.data}
-                        onChange={(e) => updateTransaction(item.id, 'data', e.target.value)}
-                        className="w-full text-sm font-bold bg-slate-50 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-red-100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black text-slate-400 uppercase">Nº Documento</label>
-                      <input
-                        type="text"
-                        placeholder="000"
-                        value={item.nf}
-                        onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)}
-                        className="w-full text-sm font-bold bg-slate-50 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-red-100"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 pt-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 font-mono font-black text-red-900 bg-red-50 px-4 py-3 rounded-xl border border-red-100">
-                        <span className="text-xs opacity-50">R$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.valor}
-                          onChange={(e) => updateTransaction(item.id, 'valor', e.target.value)}
-                          className="w-full text-lg outline-none bg-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex-shrink-0">
-                      <label className="flex items-center gap-2 text-xs font-black text-white bg-red-600 hover:bg-red-700 px-4 py-3 rounded-xl shadow-md transition-all cursor-pointer">
-                        <Paperclip size={16} /> {item.attachments.length > 0 ? `${item.attachments.length}` : 'ANEXAR'}
-                        <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, item.id)} />
-                      </label>
-                    </div>
-                  </div>
-
-                  {item.attachments.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {item.attachments.map((file, idx) => (
-                        <div key={idx} className="flex items-center gap-1.5 bg-slate-100 px-2 py-1.5 rounded-lg border border-slate-200">
-                          <Eye size={14} className="text-red-500" onClick={() => openPreview(file)} />
-                          <span className="text-[10px] font-bold truncate max-w-[80px]">{file.name}</span>
-                          <X size={14} className="text-slate-400 hover:text-red-500" onClick={() => removeAttachment(item.id, idx)} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {transactions.length > 0 && (
-                <div className="p-5 bg-slate-50 flex justify-between items-center text-sm">
-                  <span className="font-extrabold text-slate-400 uppercase tracking-widest text-[10px]">Total do Lote</span>
-                  <span className="text-lg font-black text-red-900 font-mono">{formatCurrency(totals.utilizado)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Desktop Table (md+ only) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-slate-50/80 text-slate-400 text-[11px] uppercase font-black border-b border-slate-100">
-                    <th className="px-6 py-4 w-36">Data</th>
-                    <th className="px-6 py-4">Descrição e Fornecedor</th>
-                    <th className="px-6 py-4 w-28 text-center">Nº Doc</th>
-                    <th className="px-6 py-4 w-40 text-right">Valor</th>
-                    <th className="px-6 py-4 w-64 print:hidden">Comprovantes <span className="text-red-500">*</span></th>
-                    <th className="px-6 py-4 w-12 print:hidden"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {transactions.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic">Nenhuma despesa lançada.</td>
-                    </tr>
-                  )}
-                  <AnimatePresence>
-                    {transactions.map((item) => (
-                      <motion.tr
-                        key={item.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="hover:bg-red-50/30 transition-colors group"
-                      >
-                        <td className="px-6 py-4 align-top">
-                          <input type="date" value={item.data} onChange={(e) => updateTransaction(item.id, 'data', e.target.value)} className="w-full text-xs font-bold outline-none bg-transparent text-slate-600 focus:text-red-600" />
-                        </td>
-                        <td className="px-6 py-4 align-top">
-                          <input type="text" placeholder="Qual o motivo do gasto?" value={item.motivo} onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())} className="w-full text-sm font-bold outline-none bg-transparent mb-1 text-slate-800 placeholder:text-slate-300 focus:text-red-600" />
-                          <input type="text" placeholder="Nome do Fornecedor / Empresa" value={item.fornecedor} onChange={(e) => updateTransaction(item.id, 'fornecedor', e.target.value)} className="w-full text-[11px] text-slate-400 font-medium outline-none bg-transparent focus:text-slate-600 uppercase" />
-                        </td>
-                        <td className="px-6 py-4 align-top text-center">
-                          <input type="text" placeholder="000" value={item.nf} onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)} className="w-full text-xs text-center font-bold outline-none bg-transparent text-slate-500 focus:text-red-600" />
-                        </td>
-                        <td className="px-6 py-4 align-top text-right">
-                          <div className="flex items-center justify-end gap-1 font-mono font-black text-red-900 bg-red-50/50 px-3 py-1 rounded-lg">
-                            <span className="text-[10px] opacity-50">R$</span>
-                            <input type="number" step="0.01" value={item.valor} onChange={(e) => updateTransaction(item.id, 'valor', e.target.value)} className="w-20 text-right outline-none bg-transparent" />
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-top print:hidden">
-                          <div className="flex flex-col gap-2">
-                            <label className="flex items-center gap-2 text-[10px] font-black text-white bg-red-500 opacity-60 hover:opacity-100 transition-opacity cursor-pointer w-fit px-3 py-1.5 rounded-lg shadow-sm">
-                              <Paperclip size={12} /> ANEXAR
-                              <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, item.id)} />
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                              {item.attachments.map((file, idx) => (
-                                <div key={idx} className="flex items-center gap-2 bg-slate-100 border border-slate-200 text-[10px] pl-2 pr-1 py-1 rounded-md text-slate-700 group/file">
-                                  <FileText size={12} className="text-red-400" />
-                                  <span className="truncate max-w-[100px] font-bold">{file.name}</span>
-                                  <div className="flex items-center gap-0.5 ml-1">
-                                    <button onClick={() => openPreview(file)} className="p-1 text-slate-400 hover:text-red-600 transition-colors">
-                                      <Eye size={12} />
-                                    </button>
-                                    <button onClick={() => removeAttachment(item.id, idx)} className="p-1 text-slate-400 hover:text-red-500 transition-colors">
-                                      <X size={12} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-top text-right print:hidden">
-                          <button onClick={() => removeTransaction(item.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all"><Trash2 size={18} /></button>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-                <tfoot>
-                  <tr className="bg-slate-50 font-black border-t-2 border-slate-200">
-                    <td colSpan="3" className="px-6 py-6 text-right text-slate-400 text-[11px] uppercase tracking-widest">Total Acumulado</td>
-                    <td className="px-6 py-6 text-right text-xl font-mono text-red-900">{formatCurrency(totals.utilizado)}</td>
-                    <td colSpan="2" className="print:hidden"></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </section>
-
-          {/* MODAL PREVIEW */}
-          {previewImage && (
-            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden" onClick={() => setPreviewImage(null)}>
-              <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                <button onClick={() => setPreviewImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-all z-10">
-                  <X size={24} />
-                </button>
-                <img src={previewImage} alt="Preview" className="w-full h-auto max-h-[85vh] object-contain" />
-              </div>
-            </div>
-          )}
-
-          {/* FOOTER IMPRESSÃO */}
-          <section className="hidden print:block mt-20">
-            <div className="grid grid-cols-2 gap-20 px-10">
-              <div className="border-t-2 border-slate-900 pt-4 text-center">
-                <p className="font-black uppercase text-xs tracking-widest text-slate-900">{headerData.detentor}</p>
-                <p className="text-[10px] text-slate-500 font-medium italic mt-1">Assinatura do Detentor</p>
-                <p className="text-[9px] text-slate-400 mt-0.5">CPF: {headerData.cpf}</p>
-              </div>
-              <div className="border-t-2 border-slate-900 pt-4 text-center">
-                <p className="font-black uppercase text-xs tracking-widest text-slate-900">Financeiro / Gerência</p>
-                <p className="text-[10px] text-slate-500 font-medium italic mt-1">Aprovado em: ____ / ____ / ________</p>
-                <p className="text-[9px] text-slate-400 mt-0.5">Visto / Carimbo</p>
-              </div>
-            </div>
-            <div className="mt-20 text-center text-[9px] text-slate-300">
-              Relatório gerado digitalmente em {new Date().toLocaleString('pt-BR')}
-            </div>
-          </section>
-
-        </div>
-
-        {/* DEVELOPER FOOTER */}
-        <footer className="max-w-7xl mx-auto mt-12 mb-8 px-4 text-center space-y-2 print:hidden">
-          <p className="text-slate-400 text-sm font-medium tracking-wide">
-            Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 font-bold transition-colors">Allan Anjos</a>
-          </p>
-          <p className="text-slate-300 text-xs italic">
-            Desenvolvido com café ☕
-          </p>
-        </footer>
-      </div>
-    </div>
-  );
-};
 
 // --- Componentes Atômicos ---
 
@@ -678,7 +91,6 @@ const StatCard = ({ label, value, icon, trend, trendColor = "text-slate-400", co
       <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase mb-0.5 md:mb-1 tracking-wider">{label}</p>
       <p className="text-xl md:text-3xl font-black tracking-tight font-mono">{value}</p>
     </div>
-    {/* Subtle decorative circle */}
     <div className="absolute -right-4 -bottom-4 w-16 md:w-24 h-16 md:h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
   </div>
 );
@@ -710,5 +122,426 @@ const InputField = ({ label, icon, ...props }) => (
     </div>
   </div>
 );
+
+// --- Componente: Gerador de Prestação ---
+const Generator = ({ onSaveRecord }) => {
+  const initialHeader = {
+    detentor: '',
+    cpf: '',
+    loja: '',
+    depto: '',
+    chavePix: '',
+    fundoDisponibilizado: 0,
+    dataPrestacao: new Date().toISOString().split('T')[0]
+  };
+
+  const [headerData, setHeaderData] = useState(initialHeader);
+  const [transactions, setTransactions] = useState([]);
+  const [isProcessingZip, setIsProcessingZip] = useState(false);
+  const [isSyncingSharePoint, setIsSyncingSharePoint] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  useEffect(() => {
+    const savedHeader = localStorage.getItem('fundo_header');
+    const savedTransactions = localStorage.getItem('fundo_transactions');
+    if (savedHeader) {
+      const parsed = JSON.parse(savedHeader);
+      setHeaderData({ ...parsed, loja: '', detentor: '' });
+    }
+    if (savedTransactions) {
+      setTransactions(JSON.parse(savedTransactions).map(t => ({ ...t, attachments: [] })));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('fundo_header', JSON.stringify(headerData));
+  }, [headerData]);
+
+  useEffect(() => {
+    const txToSave = transactions.map(({ attachments, ...rest }) => rest);
+    localStorage.setItem('fundo_transactions', JSON.stringify(txToSave));
+  }, [transactions]);
+
+  const totals = useMemo(() => {
+    const utilizado = transactions.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
+    const saldo = headerData.fundoDisponibilizado - utilizado;
+    return { utilizado, saldo };
+  }, [transactions, headerData.fundoDisponibilizado]);
+
+  const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const addTransaction = () => {
+    const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
+    setTransactions([...transactions, {
+      id: newId,
+      data: new Date().toISOString().split('T')[0],
+      motivo: '',
+      fornecedor: '',
+      nf: '',
+      valor: 0,
+      attachments: []
+    }]);
+  };
+
+  const updateTransaction = (id, field, value) => setTransactions(transactions.map(t => t.id === id ? { ...t, [field]: value } : t));
+  const removeTransaction = (id) => window.confirm("Deseja realmente excluir?") && setTransactions(transactions.filter(t => t.id !== id));
+
+  const resetForm = () => {
+    if (window.confirm("Limpar tudo?")) {
+      setHeaderData(initialHeader);
+      setTransactions([]);
+      localStorage.clear();
+    }
+  };
+
+  const handleFileChange = (e, tId) => {
+    const files = Array.from(e.target.files);
+    setTransactions(prev => prev.map(t => t.id === tId ? { ...t, attachments: [...t.attachments, ...files] } : t));
+  };
+
+  const removeAttachment = (tId, idx) => {
+    setTransactions(prev => prev.map(t => {
+      if (t.id === tId) {
+        const copy = [...t.attachments];
+        copy.splice(idx, 1);
+        return { ...t, attachments: copy };
+      }
+      return t;
+    }));
+  };
+
+  const validateHeader = () => {
+    const fields = ['detentor', 'cpf', 'loja', 'chavePix', 'depto'];
+    if (fields.some(f => !headerData[f])) { alert("Preencha todos os campos obrigatórios."); return false; }
+    if (headerData.fundoDisponibilizado <= 0) { alert("Fundo deve ser > 0."); return false; }
+    if (transactions.some(t => t.attachments.length === 0)) { alert("Todos os lançamentos precisam de anexo."); return false; }
+    return true;
+  };
+
+  const generatePDFReport = async () => {
+    const element = document.getElementById('print-area');
+    if (!element) return null;
+    const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    return pdf.output('blob');
+  };
+
+  const handleSharePointSync = async () => {
+    if (!validateHeader()) return;
+    setIsSyncingSharePoint(true);
+    try {
+      const pdfBlob = await generatePDFReport();
+      const record = {
+        id: Date.now(),
+        header: headerData,
+        total: totals.utilizado,
+        timestamp: new Date().toLocaleString('pt-BR'),
+        status: 'Synced'
+      };
+
+      onSaveRecord(record);
+      alert("Relatório enviado para o SharePoint!");
+    } catch (e) {
+      alert("Erro na sincronização.");
+    } finally {
+      setIsSyncingSharePoint(false);
+    }
+  };
+
+  const generateZipPackage = async () => {
+    if (!validateHeader()) return;
+    setIsProcessingZip(true);
+    try {
+      const zip = new JSZip();
+      const pdf = await generatePDFReport();
+      if (pdf) zip.file("relatorio.pdf", pdf);
+      const folder = zip.folder("comprovantes");
+      transactions.forEach((t, i) => t.attachments.forEach((f, fi) => folder.file(`item_${i + 1}_${fi}_${f.name}`, f)));
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = `PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}.zip`;
+      link.click();
+    } catch (e) {
+      alert("Erro ao gerar ZIP.");
+    } finally {
+      setIsProcessingZip(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 print:hidden">
+        <div className="flex items-center gap-4">
+          <img src="./logo.png" alt="Logo" className="h-10 w-auto" />
+          <div className="h-10 w-px bg-slate-200 hidden md:block"></div>
+          <div>
+            <h1 className="text-xl font-black text-slate-800">Nova Prestação</h1>
+            <p className="text-slate-500 text-xs font-medium">Preencha os dados abaixo</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={resetForm} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all font-sans">
+            <RefreshCcw size={16} /> Reiniciar
+          </button>
+          <button onClick={() => window.print()} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all font-sans">
+            <Printer size={16} /> Imprimir
+          </button>
+          <button onClick={handleSharePointSync} disabled={isSyncingSharePoint} className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all font-sans">
+            {isSyncingSharePoint ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+            Sincronizar SharePoint
+          </button>
+          <button onClick={generateZipPackage} disabled={isProcessingZip} className="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-red-100 hover:bg-red-700 transition-all font-sans">
+            {isProcessingZip ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+            Baixar ZIP
+          </button>
+        </div>
+      </header>
+
+      <div id="print-area" className="space-y-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm print:p-0 print:border-none">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard label="Fundo Disponível" value={formatCurrency(headerData.fundoDisponibilizado)} icon={<Calculator className="text-red-600" />} trend="Total do Fundo" />
+          <StatCard label="Total Utilizado" value={formatCurrency(totals.utilizado)} icon={<AlertCircle className="text-amber-600" />} trend={`${Math.round((totals.utilizado / headerData.fundoDisponibilizado) * 100) || 0}%`} />
+          <StatCard label="Saldo" value={formatCurrency(totals.saldo)} icon={<CheckCircle2 className="text-emerald-600" />} colorClass={totals.saldo < 0 ? "bg-red-50" : "bg-emerald-50"} trend="Remanescente" />
+        </div>
+
+        <section className="space-y-6 border-t pt-6">
+          <div className="flex items-center gap-2 text-slate-400">
+            <User size={16} /> <h2 className="text-xs font-black uppercase tracking-widest">Informações Gerais</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <InputField label="Detentor" name="detentor" required value={headerData.detentor} onChange={(e) => setHeaderData({ ...headerData, detentor: e.target.value })} placeholder="Nome Completo" />
+            <InputField label="CPF" name="cpf" required value={headerData.cpf} onChange={(e) => {
+              let v = e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').substring(0, 14);
+              setHeaderData({ ...headerData, cpf: v });
+            }} placeholder="000.000.000-00" />
+            <InputField label="Loja" name="loja" required type="select" value={headerData.loja} onChange={(e) => {
+              const s = STORES.find(x => x.name === e.target.value);
+              setHeaderData({ ...headerData, loja: e.target.value, detentor: s?.manager.toUpperCase() || '' });
+            }} />
+            <InputField label="Data" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={(e) => setHeaderData({ ...headerData, dataPrestacao: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <InputField label="Chave PIX" name="chavePix" required value={headerData.chavePix} onChange={(e) => setHeaderData({ ...headerData, chavePix: e.target.value })} />
+            <InputField label="Depto" name="depto" required value={headerData.depto} onChange={(e) => setHeaderData({ ...headerData, depto: e.target.value })} />
+            <InputField label="Valor Fundo" name="fundoDisponibilizado" required type="number" value={headerData.fundoDisponibilizado} onChange={(e) => setHeaderData({ ...headerData, fundoDisponibilizado: Number(e.target.value) })} />
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl">
+            <h2 className="text-xs font-black uppercase text-slate-600 tracking-widest">Lançamentos</h2>
+            <button onClick={addTransaction} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-700 shadow-md transition-all active:scale-95 font-sans">
+              <Plus size={14} /> NOVO
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {transactions.map(t => (
+              <div key={t.id} className="p-4 border border-slate-100 rounded-xl bg-slate-50/30 flex flex-col md:flex-row gap-4 items-start hover:bg-slate-50 transition-colors">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+                  <div className="md:col-span-2">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Motivo / Fornecedor</p>
+                    <input type="text" value={t.motivo} onChange={(e) => updateTransaction(t.id, 'motivo', e.target.value.toUpperCase())} placeholder="Motivo do gasto" className="w-full text-sm font-bold bg-transparent outline-none border-b border-transparent focus:border-red-500" />
+                    <input type="text" value={t.fornecedor} onChange={(e) => updateTransaction(t.id, 'fornecedor', e.target.value)} placeholder="Fornecedor / Empresa" className="w-full text-[10px] text-slate-500 uppercase bg-transparent outline-none mt-1" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Valor</p>
+                    <div className="flex items-center gap-1 font-mono text-sm font-bold text-red-900 bg-red-50/50 p-2 rounded-lg">
+                      <span>R$</span>
+                      <input type="number" value={t.valor} onChange={(e) => updateTransaction(t.id, 'valor', e.target.value)} className="w-full bg-transparent outline-none" />
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 bg-slate-200 px-3 py-2 rounded-xl text-[10px] font-bold cursor-pointer hover:bg-slate-300 transition-all font-sans">
+                      <Paperclip size={12} /> {t.attachments.length || 'ANEXAR'}
+                      <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, t.id)} />
+                    </label>
+                    <button onClick={() => removeTransaction(t.id)} className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                {t.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 w-full md:w-auto">
+                    {t.attachments.map((f, fi) => (
+                      <div key={fi} className="flex items-center gap-2 bg-white border px-2 py-1 rounded-lg text-[9px] font-bold">
+                        <FileText size={10} className="text-red-500" /> <span className="truncate max-w-[60px]">{f.name}</span>
+                        <X size={10} className="cursor-pointer hover:text-red-500" onClick={() => removeAttachment(t.id, fi)} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="hidden print:block mt-20 border-t-2 border-slate-900 pt-10">
+          <div className="grid grid-cols-2 gap-20">
+            <div className="text-center">
+              <p className="text-xs font-black uppercase tracking-widest">{headerData.detentor}</p>
+              <p className="text-[10px] italic text-slate-500 mt-1">Assinatura do Detentor</p>
+              <div className="mt-8 border-t border-slate-300 w-3/4 mx-auto"></div>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-black uppercase tracking-widest">Financeiro / Gerência</p>
+              <p className="text-[10px] italic text-slate-500 mt-1">Aprovado em ___/___/___</p>
+              <div className="mt-8 border-t border-slate-300 w-3/4 mx-auto"></div>
+            </div>
+          </div>
+          <p className="text-center text-[8px] text-slate-300 mt-20">Relatório gerado digitalmente em {new Date().toLocaleString('pt-BR')}</p>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+// --- Componente: Histórico ---
+const HistoryDashboard = ({ records }) => {
+  const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  return (
+    <div className="space-y-6">
+      <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-red-50 rounded-2xl">
+            <History className="text-red-600" size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-800">Histórico de Registros</h1>
+            <p className="text-slate-500 text-xs font-medium">Relatórios enviados por este navegador</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 border-b">
+              <tr>
+                <th className="px-6 py-4">Data/Hora</th>
+                <th className="px-6 py-4">Loja / Unidade</th>
+                <th className="px-6 py-4">Detentor</th>
+                <th className="px-6 py-4 text-right">Valor Total</th>
+                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {records.length === 0 ? (
+                <tr><td colSpan="6" className="p-16 text-center text-slate-400 italic font-medium">Nenhum registro encontrado localmente.</td></tr>
+              ) : (
+                records.map(r => (
+                  <tr key={r.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-6 py-4 text-xs font-bold text-slate-500">{r.timestamp}</td>
+                    <td className="px-6 py-4 text-xs font-black text-slate-800 uppercase">{r.header.loja}</td>
+                    <td className="px-6 py-4 text-xs font-medium text-slate-500">{r.header.detentor}</td>
+                    <td className="px-6 py-4 text-right text-sm font-black text-red-900 font-mono">{formatCurrency(r.total)}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-[9px] font-black uppercase">
+                        <CheckCircle2 size={12} /> SharePoint
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="p-2 text-slate-300 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100">
+                        <ExternalLink size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Componente Raiz (Navegação) ---
+const App = () => {
+  const [history, setHistory] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('fundo_history');
+    if (saved) setHistory(JSON.parse(saved));
+  }, []);
+
+  const saveToHistory = (record) => {
+    const newHistory = [record, ...history];
+    setHistory(newHistory);
+    localStorage.setItem('fundo_history', JSON.stringify(newHistory));
+  };
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col md:flex-row">
+        {/* Mobile Nav Toggle */}
+        <div className="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-50">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-black italic">MP</div>
+            <span className="font-black text-xs uppercase tracking-tighter">Fundo Fixo</span>
+          </div>
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-white/10 rounded-lg">
+            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Sidebar */}
+        <nav className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative w-full md:w-64 h-screen bg-slate-900 text-white p-6 flex flex-col gap-10 flex-shrink-0 transition-transform duration-300 z-40`}>
+          <div className="flex items-center gap-3 hidden md:flex">
+            <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center font-black text-xl italic shadow-lg shadow-red-900/20">MP</div>
+            <span className="font-black text-sm tracking-tighter uppercase leading-none">Mini Preço<br /><span className="text-red-500 text-[10px]">Fundo Fixo</span></span>
+          </div>
+
+          <div className="space-y-1.5 flex-1">
+            <Link to="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-white/10 transition-all font-bold text-sm group">
+              <Plus size={18} className="text-red-500 group-hover:scale-110 transition-transform" /> Novo Lançamento
+            </Link>
+            <Link to="/registros" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-white/10 transition-all font-bold text-sm group">
+              <History size={18} className="text-slate-400 group-hover:rotate-[-20deg] transition-transform" /> Histórico Global
+            </Link>
+          </div>
+
+          <div className="pt-8 border-t border-white/5 space-y-4">
+            <div className="bg-white/5 p-4 rounded-2xl">
+              <p className="text-[9px] text-white/30 uppercase font-black mb-2 tracking-widest">SharePoint Sync</p>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-bold text-emerald-100 italic">Conectado / Braço</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-[9px] text-white/20 uppercase font-black">Corporativo v2.5</p>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto max-h-screen bg-slate-50/50">
+          <div className="p-4 md:p-10 max-w-6xl mx-auto">
+            <Routes>
+              <Route path="/" element={<Generator onSaveRecord={saveToHistory} />} />
+              <Route path="/registros" element={<HistoryDashboard records={history} />} />
+            </Routes>
+          </div>
+
+          <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60">
+            <p className="text-slate-400 text-xs font-medium tracking-wide">Desenvolvido por: <span className="text-red-600 font-black">Allan Anjos</span></p>
+            <div className="flex items-center justify-center gap-1.5 text-slate-300 text-[9px] font-bold uppercase tracking-widest">
+              <Send size={10} /> Sincronizado via SharePoint/Power Automate 🍏
+            </div>
+          </footer>
+        </main>
+      </div>
+    </Router>
+  );
+};
 
 export default App;
