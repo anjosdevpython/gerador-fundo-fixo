@@ -54,6 +54,24 @@ const STORES = [
   { id: '306', name: 'JUMBO CD ES', manager: 'Dani Nascimento' },
   { id: '307', name: 'JUMBO GLORIA', manager: 'Rackilane' },
   { id: '308', name: 'JUMBO DAY BY DAY', manager: 'Namar' },
+  // RDS Units
+  { id: '1', name: 'RDS SANTA FELICIDADE – GERENTE', manager: 'Valquiria Aparecida de Oliveira Goncalves' },
+  { id: '2', name: 'RDS AV. DAS TORRES – GERENTE', manager: 'Lucas Tiago Ferreira Pego' },
+  { id: '2', name: 'RDS AV. DAS TORRES – LÍDER', manager: 'Rosenilda de Oliveira Tome Martins' },
+  { id: '4', name: 'RDS PINHAIS – GERENTE', manager: 'Carlos Eduardo Lukaszevski' },
+  { id: '4', name: 'RDS PINHAIS – LÍDER', manager: 'Robi Leandro Pereira Arruda Ueque' },
+  { id: '6', name: 'RDS PARANAGUÁ – GERENTE', manager: 'Dennis' },
+  { id: '6', name: 'RDS PARANAGUÁ – LÍDER', manager: 'Joice Maiara Correa Sampaio' },
+  { id: '8', name: 'RDS FAZENDA – GERENTE', manager: 'Elaine Graciele Massaneiro do Nascimento' },
+  { id: '8', name: 'RDS FAZENDA – LÍDER', manager: 'Dirlene Aparecida Freitas dos Santos' },
+  { id: '9', name: 'RDS SÍTIO CERCADO – GERENTE', manager: 'Bruno Adriano Gomes Mendes' },
+  { id: '11', name: 'RDS FAZENDINHA – GERENTE', manager: 'Gabriele Fernandes de Lima' },
+  { id: '14', name: 'RDS COLOMBO – LÍDER', manager: 'Carolina Martins Floriano' },
+  { id: '17', name: 'RDS XAXIM – GERENTE', manager: 'Maria Francielly Vieira de Cerqueira' },
+  { id: '17', name: 'RDS XAXIM – LÍDER', manager: 'Eduardo da Silva Canha Machado' },
+  { id: '18', name: 'RDS FANNY – GERENTE', manager: 'Luiz Alberto Nogueira Traldi' },
+  { id: '19', name: 'RDS ARAUCÁRIA – GERENTE', manager: 'Orli' },
+  { id: '19', name: 'RDS ARAUCÁRIA – LÍDER', manager: 'Janaina Aparecida Pereira' },
 ];
 
 const App = () => {
