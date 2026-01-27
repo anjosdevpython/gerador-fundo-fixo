@@ -234,9 +234,10 @@ const Generator = ({ onSaveRecord }) => {
           for (let i = 0; i < elements.length; i++) {
             const el = elements[i];
             const style = window.getComputedStyle(el);
-            if (style.color.includes('oklch')) el.style.color = '#334155';
-            if (style.backgroundColor.includes('oklch')) el.style.backgroundColor = '#ffffff';
-            if (style.borderColor.includes('oklch')) el.style.borderColor = '#e2e8f0';
+            // Generalize: strip any color starting with "ok" (oklch, oklab, etc)
+            if (style.color.includes('ok')) el.style.color = '#334155';
+            if (style.backgroundColor.includes('ok')) el.style.backgroundColor = '#ffffff';
+            if (style.borderColor.includes('ok')) el.style.borderColor = '#e2e8f0';
           }
         }
       });
