@@ -278,10 +278,9 @@ const App = () => {
 
         {/* HEADER */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 print:hidden">
-          <div className="flex items-center gap-4">
-            <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-200">
-              <FileArchive className="text-white" size={32} />
-            </div>
+          <div className="flex items-center gap-6">
+            <img src="./logo.png" alt="Mini Preço" className="h-12 w-auto object-contain" />
+            <div className="h-10 w-px bg-slate-200 hidden md:block"></div>
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">Prestação de Contas</h1>
               <p className="text-slate-500 font-medium text-sm">Controle de Fundo Fixo Profissional</p>
@@ -303,7 +302,7 @@ const App = () => {
             <button
               onClick={generateZipPackage}
               disabled={isProcessingZip}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-black px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-95 text-sm"
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-200 text-white font-black px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-red-100 active:scale-95 text-sm"
             >
               {isProcessingZip ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
               Exportar Pacote ZIP
@@ -316,7 +315,7 @@ const App = () => {
           <StatCard
             label="Fundo Disponibilizado"
             value={formatCurrency(headerData.fundoDisponibilizado)}
-            icon={<Calculator className="text-indigo-600" />}
+            icon={<Calculator className="text-red-600" />}
             trend="Total Alocado"
           />
           <StatCard
@@ -358,10 +357,10 @@ const App = () => {
         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border">
           <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
+              <div className="w-2 h-8 bg-red-600 rounded-full"></div>
               <h2 className="font-black text-slate-800 uppercase text-xs tracking-widest">Detalhamento de Gastos</h2>
             </div>
-            <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-xs bg-indigo-600 text-white font-black px-4 py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95">
+            <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-xs bg-red-600 text-white font-black px-4 py-2 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
               <Plus size={16} /> NOVO LANÇAMENTO
             </button>
           </div>
@@ -391,37 +390,37 @@ const App = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="hover:bg-indigo-50/30 transition-colors group"
+                      className="hover:bg-red-50/30 transition-colors group"
                     >
                       <td className="px-6 py-4 align-top">
-                        <input type="date" value={item.data} onChange={(e) => updateTransaction(item.id, 'data', e.target.value)} className="w-full text-xs font-bold outline-none bg-transparent text-slate-600 focus:text-indigo-600" />
+                        <input type="date" value={item.data} onChange={(e) => updateTransaction(item.id, 'data', e.target.value)} className="w-full text-xs font-bold outline-none bg-transparent text-slate-600 focus:text-red-600" />
                       </td>
                       <td className="px-6 py-4 align-top">
-                        <input type="text" placeholder="Qual o motivo do gasto?" value={item.motivo} onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())} className="w-full text-sm font-bold outline-none bg-transparent mb-1 text-slate-800 placeholder:text-slate-300 focus:text-indigo-600" />
+                        <input type="text" placeholder="Qual o motivo do gasto?" value={item.motivo} onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())} className="w-full text-sm font-bold outline-none bg-transparent mb-1 text-slate-800 placeholder:text-slate-300 focus:text-red-600" />
                         <input type="text" placeholder="Nome do Fornecedor / Empresa" value={item.fornecedor} onChange={(e) => updateTransaction(item.id, 'fornecedor', e.target.value)} className="w-full text-[11px] text-slate-400 font-medium outline-none bg-transparent focus:text-slate-600 uppercase" />
                       </td>
                       <td className="px-6 py-4 align-top text-center">
-                        <input type="text" placeholder="000" value={item.nf} onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)} className="w-full text-xs text-center font-bold outline-none bg-transparent text-slate-500 focus:text-indigo-600" />
+                        <input type="text" placeholder="000" value={item.nf} onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)} className="w-full text-xs text-center font-bold outline-none bg-transparent text-slate-500 focus:text-red-600" />
                       </td>
                       <td className="px-6 py-4 align-top text-right">
-                        <div className="flex items-center justify-end gap-1 font-mono font-black text-indigo-900 bg-indigo-50/50 px-3 py-1 rounded-lg">
+                        <div className="flex items-center justify-end gap-1 font-mono font-black text-red-900 bg-red-50/50 px-3 py-1 rounded-lg">
                           <span className="text-[10px] opacity-50">R$</span>
                           <input type="number" step="0.01" value={item.valor} onChange={(e) => updateTransaction(item.id, 'valor', e.target.value)} className="w-20 text-right outline-none bg-transparent" />
                         </div>
                       </td>
                       <td className="px-6 py-4 align-top print:hidden">
                         <div className="flex flex-col gap-2">
-                          <label className="flex items-center gap-2 text-[10px] font-black text-white bg-indigo-500 opacity-60 hover:opacity-100 transition-opacity cursor-pointer w-fit px-3 py-1.5 rounded-lg shadow-sm">
+                          <label className="flex items-center gap-2 text-[10px] font-black text-white bg-red-500 opacity-60 hover:opacity-100 transition-opacity cursor-pointer w-fit px-3 py-1.5 rounded-lg shadow-sm">
                             <Paperclip size={12} /> ANEXAR
                             <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, item.id)} />
                           </label>
                           <div className="flex flex-wrap gap-2">
                             {item.attachments.map((file, idx) => (
                               <div key={idx} className="flex items-center gap-2 bg-slate-100 border border-slate-200 text-[10px] pl-2 pr-1 py-1 rounded-md text-slate-700 group/file">
-                                <FileText size={12} className="text-indigo-400" />
+                                <FileText size={12} className="text-red-400" />
                                 <span className="truncate max-w-[100px] font-bold">{file.name}</span>
                                 <div className="flex items-center gap-0.5 ml-1">
-                                  <button onClick={() => openPreview(file)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors">
+                                  <button onClick={() => openPreview(file)} className="p-1 text-slate-400 hover:text-red-600 transition-colors">
                                     <Eye size={12} />
                                   </button>
                                   <button onClick={() => removeAttachment(item.id, idx)} className="p-1 text-slate-400 hover:text-red-500 transition-colors">
@@ -443,7 +442,7 @@ const App = () => {
               <tfoot>
                 <tr className="bg-slate-50 font-black border-t-2 border-slate-200">
                   <td colSpan="3" className="px-6 py-6 text-right text-slate-400 text-[11px] uppercase tracking-widest">Total Acumulado</td>
-                  <td className="px-6 py-6 text-right text-xl font-mono text-indigo-900">{formatCurrency(totals.utilizado)}</td>
+                  <td className="px-6 py-6 text-right text-xl font-mono text-red-900">{formatCurrency(totals.utilizado)}</td>
                   <td colSpan="2" className="print:hidden"></td>
                 </tr>
               </tfoot>
@@ -487,7 +486,7 @@ const App = () => {
       {/* DEVELOPER FOOTER */}
       <footer className="max-w-7xl mx-auto mt-12 mb-8 px-4 text-center space-y-2 print:hidden">
         <p className="text-slate-400 text-xs font-medium tracking-wide">
-          Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:text-indigo-600 font-bold transition-colors">Allan Anjos</a>
+          Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 font-bold transition-colors">Allan Anjos</a>
         </p>
         <p className="text-slate-300 text-[10px] italic">
           Desenvolvido com café ☕
@@ -523,7 +522,7 @@ const InputField = ({ label, icon, ...props }) => (
       {props.type === 'select' ? (
         <select
           {...props}
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none"
         >
           <option value="">Selecione...</option>
           {STORES.map((s, idx) => (
@@ -535,7 +534,7 @@ const InputField = ({ label, icon, ...props }) => (
       ) : (
         <input
           {...props}
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
         />
       )}
     </div>
