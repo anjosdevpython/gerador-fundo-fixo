@@ -518,7 +518,6 @@ const LoginPage = ({ onLogin }) => {
 // --- Componente Raiz (Navegação) ---
 const App = () => {
   const [history, setHistory] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Wrapper para proteção de rota
@@ -542,60 +541,20 @@ const App = () => {
 
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col md:flex-row">
-        {/* Mobile Nav Toggle */}
-        <div className="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-50">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-black italic">MP</div>
-            <span className="font-black text-xs uppercase tracking-tighter">Fundo Fixo</span>
-          </div>
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-white/10 rounded-lg">
-            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-
-        {/* Sidebar */}
-        <nav className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative w-full md:w-64 h-screen bg-slate-900 text-white p-6 flex flex-col gap-10 flex-shrink-0 transition-transform duration-300 z-40`}>
-          <div className="flex items-center gap-3 hidden md:flex">
-            <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center font-black text-xl italic shadow-lg shadow-red-900/20">MP</div>
-            <span className="font-black text-sm tracking-tighter uppercase leading-none">Mini Preço<br /><span className="text-red-500 text-[10px]">Fundo Fixo</span></span>
-          </div>
-
-          <div className="space-y-1.5 flex-1">
-            <Link to="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-white/10 transition-all font-bold text-sm group">
-              <Plus size={18} className="text-red-500 group-hover:scale-110 transition-transform" /> Novo Lançamento
-            </Link>
-          </div>
-
-          <div className="pt-8 border-t border-white/5 space-y-4">
-            <div className="bg-white/5 p-4 rounded-2xl">
-              <p className="text-[9px] text-white/30 uppercase font-black mb-2 tracking-widest">SharePoint Sync</p>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-[10px] font-bold text-emerald-100 italic">Conectado / Braço</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-[9px] text-white/20 uppercase font-black">Corporativo v2.5</p>
-            </div>
-          </div>
-        </nav>
-
+      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col items-center">
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto max-h-screen bg-slate-50/50">
-          <div className="p-4 md:p-10 max-w-6xl mx-auto">
-            <Routes>
-              <Route path="/" element={<Generator onSaveRecord={saveToHistory} />} />
-              <Route
-                path="/registros"
-                element={
-                  <ProtectedRoute>
-                    <HistoryDashboard records={history} />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </div>
+        <main className="w-full max-w-6xl p-4 md:p-8">
+          <Routes>
+            <Route path="/" element={<Generator onSaveRecord={saveToHistory} />} />
+            <Route
+              path="/registros"
+              element={
+                <ProtectedRoute>
+                  <HistoryDashboard records={history} />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
 
           <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <p className="text-slate-400 text-xs font-medium tracking-wide">Desenvolvido por: <span className="text-red-600 font-black">Allan Anjos</span></p>
