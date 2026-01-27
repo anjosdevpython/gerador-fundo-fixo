@@ -21,57 +21,59 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const STORES = [
-  { id: '1', name: 'Mini | Santa | Loja 1', manager: 'Jaqueline' },
-  { id: '1', name: 'Salvados | Santa | Loja 1', manager: 'Valquíria' },
-  { id: '2', name: 'Mini | Torres | Loja 2', manager: 'Rosimar Robison' },
-  { id: '2', name: 'Salvados | Torres | Loja 2', manager: 'Lucas Pego' },
-  { id: '3', name: 'Centro de Distribuição | Loja 3', manager: '' },
-  { id: '4', name: 'Mini | Pinhais | Loja 4', manager: 'Michele' },
-  { id: '4', name: 'Salvados | Pinhais | Loja 4', manager: 'Carlos Eduardo' },
-  { id: '5', name: 'Ecommerce | Loja 5', manager: 'Marcos Cardoso' },
-  { id: '6', name: 'Mini/Salvados | Paranaguá | Loja 6', manager: 'Dennis Keller' },
-  { id: '7', name: 'Mini | Fanny | Loja 7', manager: 'Ivan Nícássio' },
-  { id: '8', name: 'Mini/Salvados | Fazenda Rio Grande | Loja 8', manager: 'Sheila' },
-  { id: '10', name: 'Mini/Salvados | Xaxim | Loja 10', manager: 'Maria Franciely' },
-  { id: '11', name: 'Mini | Fazendinha | Loja 11', manager: 'Jorge Belotto' },
-  { id: '11', name: 'Salvados | Fazendinha | Loja 11', manager: 'Gabriele Fernandes' },
-  { id: '12', name: 'Mini | Boulevard | Loja 12', manager: 'Anderson Oliveira' },
-  { id: '14', name: 'Mini/Salvados | Colombo | Loja 14', manager: 'Diego' },
-  { id: '17', name: 'Salvados | Xaxim | Loja 17', manager: 'Maria Franciely' },
-  { id: '18', name: 'Salvados | Fanny | Loja 18', manager: 'Luiz Traldi' },
-  { id: '19', name: 'Mini/Salvados | Araucária | Loja 19', manager: 'Orli Tadeu' },
-  { id: 'BACACHERI', name: 'Mini | Bacacheri', manager: 'Eduardo' },
-  { id: '201', name: 'Salvados | Bal Camboriú | Loja 201', manager: 'João Paiva' },
-  { id: '202', name: 'Salvados | Itajaí | Loja 202', manager: 'Thiago' },
-  { id: '206', name: 'Araquari | Loja 206', manager: 'Márcio Fernandes' },
-  { id: '208', name: 'Joinville | Loja 208', manager: 'Huanderson' },
-  { id: '301', name: 'Mini | Vila Velha | Loja 301', manager: 'Marco Antonio' },
-  { id: '303', name: 'Mini | Serra | Loja 303', manager: 'Erika' },
-  { id: '304', name: 'Mini | Vitória | Loja 304', manager: 'Leonardo' },
-  { id: '305', name: 'Linhares | Loja 305', manager: 'Suelen' },
-  { id: '306', name: 'Mini | CD ES | Loja 306', manager: 'Dani Nascimento' },
-  { id: '307', name: 'Mini | Glória | Loja 307', manager: 'Rackilane' },
-  { id: '308', name: 'Mini | Day by Day | Loja 308', manager: 'Namar' },
+  { id: '1', name: 'Mini | Santa | Loja 1 | Jaqueline', manager: 'Jaqueline' },
+  { id: '1', name: 'Salvados | Santa | Loja 1 | Valquíria', manager: 'Valquíria' },
+  { id: '2', name: 'Mini | Torres | Loja 2 | Rosimar Robison', manager: 'Rosimar Robison' },
+  { id: '2', name: 'Salvados | Torres | Loja 2 | Lucas Pego', manager: 'Lucas Pego' },
+  { id: '3', name: 'Centro de Distribuição | Loja 3 | Sem Gerente', manager: '' },
+  { id: '4', name: 'Mini | Pinhais | Loja 4 | Michele', manager: 'Michele' },
+  { id: '4', name: 'Salvados | Pinhais | Loja 4 | Carlos Eduardo', manager: 'Carlos Eduardo' },
+  { id: '5', name: 'Ecommerce | Loja 5 | Marcos Cardoso', manager: 'Marcos Cardoso' },
+  { id: '6', name: 'Mini/Salvados | Paranaguá | Loja 6 | Dennis Keller', manager: 'Dennis Keller' },
+  { id: '7', name: 'Mini | Fanny | Loja 7 | Ivan Nícássio', manager: 'Ivan Nícássio' },
+  { id: '8', name: 'Mini/Salvados | Fazenda Rio Grande | Loja 8 | Sheila', manager: 'Sheila' },
+  { id: '10', name: 'Mini/Salvados | Xaxim | Loja 10 | Maria Franciely', manager: 'Maria Franciely' },
+  { id: '11', name: 'Mini | Fazendinha | Loja 11 | Jorge Belotto', manager: 'Jorge Belotto' },
+  { id: '11', name: 'Salvados | Fazendinha | Loja 11 | Gabriele Fernandes', manager: 'Gabriele Fernandes' },
+  { id: '12', name: 'Mini | Boulevard | Loja 12 | Anderson Oliveira', manager: 'Anderson Oliveira' },
+  { id: '14', name: 'Mini/Salvados | Colombo | Loja 14 | Diego', manager: 'Diego' },
+  { id: '17', name: 'Salvados | Xaxim | Loja 17 | Maria Franciely', manager: 'Maria Franciely' },
+  { id: '18', name: 'Salvados | Fanny | Loja 18 | Luiz Traldi', manager: 'Luiz Traldi' },
+  { id: '19', name: 'Mini/Salvados | Araucária | Loja 19 | Orli Tadeu', manager: 'Orli Tadeu' },
+  { id: 'BACACHERI', name: 'Mini | Bacacheri | Eduardo', manager: 'Eduardo' },
+  { id: '201', name: 'Salvados | Bal Camboriú | Loja 201 | João Paiva', manager: 'João Paiva' },
+  { id: '202', name: 'Salvados | Itajaí | Loja 202 | Thiago', manager: 'Thiago' },
+  { id: '206', name: 'Araquari | Loja 206 | Márcio Fernandes', manager: 'Márcio Fernandes' },
+  { id: '208', name: 'Joinville | Loja 208 | Huanderson', manager: 'Huanderson' },
+  { id: '301', name: 'Mini | Vila Velha | Loja 301 | Marco Antonio', manager: 'Marco Antonio' },
+  { id: '303', name: 'Mini | Serra | Loja 303 | Erika', manager: 'Erika' },
+  { id: '304', name: 'Mini | Vitória | Loja 304 | Leonardo', manager: 'Leonardo' },
+  { id: '305', name: 'Linhares | Loja 305 | Suelen', manager: 'Suelen' },
+  { id: '306', name: 'Mini | CD ES | Loja 306 | Dani Nascimento', manager: 'Dani Nascimento' },
+  { id: '307', name: 'Mini | Glória | Loja 307 | Rackilane', manager: 'Rackilane' },
+  { id: '308', name: 'Mini | Day by Day | Loja 308 | Namar', manager: 'Namar' },
   // RDS Units
-  { id: '1', name: 'RDS | Santa Felicidade | Gerente | Loja 1', manager: 'Valquiria Aparecida de Oliveira Goncalves' },
-  { id: '2', name: 'RDS | Av. das Torres | Gerente | Loja 2', manager: 'Lucas Tiago Ferreira Pego' },
-  { id: '2', name: 'RDS | Av. das Torres | Líder | Loja 2', manager: 'Rosenilda de Oliveira Tome Martins' },
-  { id: '4', name: 'RDS | Pinhais | Gerente | Loja 4', manager: 'Carlos Eduardo Lukaszevski' },
-  { id: '4', name: 'RDS | Pinhais | Líder | Loja 4', manager: 'Robi Leandro Pereira Arruda Ueque' },
-  { id: '6', name: 'RDS | Paranaguá | Gerente | Loja 6', manager: 'Dennis' },
-  { id: '6', name: 'RDS | Paranaguá | Líder | Loja 6', manager: 'Joice Maiara Correa Sampaio' },
-  { id: '8', name: 'RDS | Fazenda | Gerente | Loja 8', manager: 'Elaine Graciele Massaneiro do Nascimento' },
-  { id: '8', name: 'RDS | Fazenda | Líder | Loja 8', manager: 'Dirlene Aparecida Freitas dos Santos' },
-  { id: '9', name: 'RDS | Sítio Cercado | Gerente | Loja 9', manager: 'Bruno Adriano Gomes Mendes' },
-  { id: '11', name: 'RDS | Fazendinha | Gerente | Loja 11', manager: 'Gabriele Fernandes de Lima' },
-  { id: '14', name: 'RDS | Colombo | Líder | Loja 14', manager: 'Carolina Martins Floriano' },
-  { id: '17', name: 'RDS | Xaxim | Gerente | Loja 17', manager: 'Maria Francielly Vieira de Cerqueira' },
-  { id: '17', name: 'RDS | Xaxim | Líder | Loja 17', manager: 'Eduardo da Silva Canha Machado' },
-  { id: '18', name: 'RDS | Fanny | Gerente | Loja 18', manager: 'Luiz Alberto Nogueira Traldi' },
-  { id: '19', name: 'RDS | Araucária | Gerente | Loja 19', manager: 'Orli' },
-  { id: '19', name: 'RDS | Araucária | Líder | Loja 19', manager: 'Janaina Aparecida Pereira' },
+  { id: '1', name: 'RDS | Santa Felicidade | Loja 1 | Valquiria Aparecida de Oliveira Goncalves', manager: 'Valquiria Aparecida de Oliveira Goncalves' },
+  { id: '2', name: 'RDS | Av. das Torres | Loja 2 | Lucas Tiago Ferreira Pego', manager: 'Lucas Tiago Ferreira Pego' },
+  { id: '2', name: 'RDS | Av. das Torres | Loja 2 | Rosenilda de Oliveira Tome Martins', manager: 'Rosenilda de Oliveira Tome Martins' },
+  { id: '4', name: 'RDS | Pinhais | Loja 4 | Carlos Eduardo Lukaszevski', manager: 'Carlos Eduardo Lukaszevski' },
+  { id: '4', name: 'RDS | Pinhais | Loja 4 | Robi Leandro Pereira Arruda Ueque', manager: 'Robi Leandro Pereira Arruda Ueque' },
+  { id: '6', name: 'RDS | Paranaguá | Loja 6 | Dennis', manager: 'Dennis' },
+  { id: '6', name: 'RDS | Paranaguá | Loja 6 | Joice Maiara Correa Sampaio', manager: 'Joice Maiara Correa Sampaio' },
+  { id: '8', name: 'RDS | Fazenda | Loja 8 | Elaine Graciele Massaneiro do Nascimento', manager: 'Elaine Graciele Massaneiro do Nascimento' },
+  { id: '8', name: 'RDS | Fazenda | Loja 8 | Dirlene Aparecida Freitas dos Santos', manager: 'Dirlene Aparecida Freitas dos Santos' },
+  { id: '9', name: 'RDS | Sítio Cercado | Loja 9 | Bruno Adriano Gomes Mendes', manager: 'Bruno Adriano Gomes Mendes' },
+  { id: '11', name: 'RDS | Fazendinha | Loja 11 | Gabriele Fernandes de Lima', manager: 'Gabriele Fernandes de Lima' },
+  { id: '14', name: 'RDS | Colombo | Loja 14 | Carolina Martins Floriano', manager: 'Carolina Martins Floriano' },
+  { id: '17', name: 'RDS | Xaxim | Loja 17 | Maria Francielly Vieira de Cerqueira', manager: 'Maria Francielly Vieira de Cerqueira' },
+  { id: '17', name: 'RDS | Xaxim | Loja 17 | Eduardo da Silva Canha Machado', manager: 'Eduardo da Silva Canha Machado' },
+  { id: '18', name: 'RDS | Fanny | Loja 18 | Luiz Alberto Nogueira Traldi', manager: 'Luiz Alberto Nogueira Traldi' },
+  { id: '19', name: 'RDS | Araucária | Loja 19 | Orli', manager: 'Orli' },
+  { id: '19', name: 'RDS | Araucária | Loja 19 | Janaina Aparecida Pereira', manager: 'Janaina Aparecida Pereira' },
 ];
 
 const App = () => {
@@ -186,7 +188,34 @@ const App = () => {
     }
   };
 
-  // --- Geração de ZIP (Relatório + Anexos) ---
+  // --- Geração de PDF ---
+  const generatePDFReport = async () => {
+    const element = document.getElementById('print-area');
+    if (!element) return null;
+
+    // Ajustes temporários para o print
+    const originalStyle = element.style.cssText;
+    element.style.padding = '20px';
+    element.style.background = 'white';
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+
+    element.style.cssText = originalStyle;
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    return pdf.output('blob');
+  };
+
+  // --- Geração de ZIP (Relatório PDF + Anexos) ---
   const generateZipPackage = async () => {
     if (transactions.length === 0) {
       alert("Adicione pelo menos um lançamento.");
@@ -197,21 +226,11 @@ const App = () => {
     try {
       const zip = new JSZip();
 
-      // 1. Gerar o JSON do Relatório
-      const reportData = {
-        cabecalho: headerData,
-        financeiro: {
-          disponivel: headerData.fundoDisponibilizado,
-          utilizado: totals.utilizado,
-          saldo: totals.saldo
-        },
-        lancamentos: transactions.map(t => ({
-          ...t,
-          attachments: t.attachments.map(f => f.name)
-        }))
-      };
-
-      zip.file("relatorio_prestacao.json", JSON.stringify(reportData, null, 2));
+      // 1. Gerar o PDF do Relatório
+      const pdfBlob = await generatePDFReport();
+      if (pdfBlob) {
+        zip.file("relatorio_prestacao.pdf", pdfBlob);
+      }
 
       // 2. Adicionar Anexos em pasta dedicada
       const attachmentsFolder = zip.folder("comprovantes");
@@ -310,188 +329,190 @@ const App = () => {
           </div>
         </header>
 
-        {/* DASHBOARD */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid-cols-3">
-          <StatCard
-            label="Fundo Disponibilizado"
-            value={formatCurrency(headerData.fundoDisponibilizado)}
-            icon={<Calculator className="text-red-600" />}
-            trend="Total Alocado"
-          />
-          <StatCard
-            label="Total Utilizado"
-            value={formatCurrency(totals.utilizado)}
-            icon={<AlertCircle className="text-amber-600" />}
-            trend={`${Math.round((totals.utilizado / headerData.fundoDisponibilizado) * 100) || 0}% consumido`}
-            trendColor={totals.utilizado > headerData.fundoDisponibilizado ? "text-red-500" : "text-amber-500"}
-          />
-          <StatCard
-            label="Saldo Remanescente"
-            value={formatCurrency(totals.saldo)}
-            icon={<CheckCircle2 className="text-emerald-600" />}
-            colorClass={totals.saldo < 0 ? "text-red-700 bg-red-50 border-red-200" : "text-emerald-700 bg-emerald-50 border-emerald-200"}
-            trend={totals.saldo < 0 ? "Excedente" : "Disponível"}
-          />
+        <div id="print-area" className="space-y-6 bg-white p-8 rounded-2xl print:p-0">
+          {/* DASHBOARD */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid-cols-3">
+            <StatCard
+              label="Fundo Disponibilizado"
+              value={formatCurrency(headerData.fundoDisponibilizado)}
+              icon={<Calculator className="text-red-600" />}
+              trend="Total Alocado"
+            />
+            <StatCard
+              label="Total Utilizado"
+              value={formatCurrency(totals.utilizado)}
+              icon={<AlertCircle className="text-amber-600" />}
+              trend={`${Math.round((totals.utilizado / headerData.fundoDisponibilizado) * 100) || 0}% consumido`}
+              trendColor={totals.utilizado > headerData.fundoDisponibilizado ? "text-red-500" : "text-amber-500"}
+            />
+            <StatCard
+              label="Saldo Remanescente"
+              value={formatCurrency(totals.saldo)}
+              icon={<CheckCircle2 className="text-emerald-600" />}
+              colorClass={totals.saldo < 0 ? "text-red-700 bg-red-50 border-red-200" : "text-emerald-700 bg-emerald-50 border-emerald-200"}
+              trend={totals.saldo < 0 ? "Excedente" : "Disponível"}
+            />
+          </div>
+
+          {/* INFO GERAIS */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6 print:border">
+            <div className="flex items-center gap-2 text-slate-400 mb-2">
+              <User size={16} />
+              <h2 className="text-xs font-black uppercase tracking-widest">Informações do Detentor</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <InputField label="Detentor" name="detentor" value={headerData.detentor} onChange={handleHeaderChange} placeholder="Nome Completo" />
+              <InputField label="CPF" name="cpf" value={headerData.cpf} onChange={handleHeaderChange} placeholder="000.000.000-00" />
+              <InputField label="Loja / Unidade" name="loja" type="select" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
+              <InputField label="Data Prestação" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={handleHeaderChange} icon={<Calendar size={14} />} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <InputField label="Chave PIX (Reembolso)" name="chavePix" value={headerData.chavePix} onChange={handleHeaderChange} icon={<CreditCard size={14} />} />
+              <InputField label="Departamento" name="depto" value={headerData.depto} onChange={handleHeaderChange} />
+              <InputField label="Ajustar Fundo (R$)" name="fundoDisponibilizado" type="number" value={headerData.fundoDisponibilizado} onChange={handleHeaderChange} />
+            </div>
+          </section>
+
+          {/* TABELA DE DESPESAS */}
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border">
+            <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-red-600 rounded-full"></div>
+                <h2 className="font-black text-slate-800 uppercase text-xs tracking-widest">Detalhamento de Gastos</h2>
+              </div>
+              <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-xs bg-red-600 text-white font-black px-4 py-2 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
+                <Plus size={16} /> NOVO LANÇAMENTO
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-400 text-[11px] uppercase font-black border-b border-slate-100">
+                    <th className="px-6 py-4 w-36">Data</th>
+                    <th className="px-6 py-4">Descrição e Fornecedor</th>
+                    <th className="px-6 py-4 w-28 text-center">Nº Doc</th>
+                    <th className="px-6 py-4 w-40 text-right">Valor</th>
+                    <th className="px-6 py-4 w-64 print:hidden">Comprovantes</th>
+                    <th className="px-6 py-4 w-12 print:hidden"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {transactions.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic">Nenhuma despesa lançada.</td>
+                    </tr>
+                  )}
+                  <AnimatePresence>
+                    {transactions.map((item) => (
+                      <motion.tr
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="hover:bg-red-50/30 transition-colors group"
+                      >
+                        <td className="px-6 py-4 align-top">
+                          <input type="date" value={item.data} onChange={(e) => updateTransaction(item.id, 'data', e.target.value)} className="w-full text-xs font-bold outline-none bg-transparent text-slate-600 focus:text-red-600" />
+                        </td>
+                        <td className="px-6 py-4 align-top">
+                          <input type="text" placeholder="Qual o motivo do gasto?" value={item.motivo} onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())} className="w-full text-sm font-bold outline-none bg-transparent mb-1 text-slate-800 placeholder:text-slate-300 focus:text-red-600" />
+                          <input type="text" placeholder="Nome do Fornecedor / Empresa" value={item.fornecedor} onChange={(e) => updateTransaction(item.id, 'fornecedor', e.target.value)} className="w-full text-[11px] text-slate-400 font-medium outline-none bg-transparent focus:text-slate-600 uppercase" />
+                        </td>
+                        <td className="px-6 py-4 align-top text-center">
+                          <input type="text" placeholder="000" value={item.nf} onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)} className="w-full text-xs text-center font-bold outline-none bg-transparent text-slate-500 focus:text-red-600" />
+                        </td>
+                        <td className="px-6 py-4 align-top text-right">
+                          <div className="flex items-center justify-end gap-1 font-mono font-black text-red-900 bg-red-50/50 px-3 py-1 rounded-lg">
+                            <span className="text-[10px] opacity-50">R$</span>
+                            <input type="number" step="0.01" value={item.valor} onChange={(e) => updateTransaction(item.id, 'valor', e.target.value)} className="w-20 text-right outline-none bg-transparent" />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-top print:hidden">
+                          <div className="flex flex-col gap-2">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-white bg-red-500 opacity-60 hover:opacity-100 transition-opacity cursor-pointer w-fit px-3 py-1.5 rounded-lg shadow-sm">
+                              <Paperclip size={12} /> ANEXAR
+                              <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, item.id)} />
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              {item.attachments.map((file, idx) => (
+                                <div key={idx} className="flex items-center gap-2 bg-slate-100 border border-slate-200 text-[10px] pl-2 pr-1 py-1 rounded-md text-slate-700 group/file">
+                                  <FileText size={12} className="text-red-400" />
+                                  <span className="truncate max-w-[100px] font-bold">{file.name}</span>
+                                  <div className="flex items-center gap-0.5 ml-1">
+                                    <button onClick={() => openPreview(file)} className="p-1 text-slate-400 hover:text-red-600 transition-colors">
+                                      <Eye size={12} />
+                                    </button>
+                                    <button onClick={() => removeAttachment(item.id, idx)} className="p-1 text-slate-400 hover:text-red-500 transition-colors">
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-top text-right print:hidden">
+                          <button onClick={() => removeTransaction(item.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all"><Trash2 size={18} /></button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+                <tfoot>
+                  <tr className="bg-slate-50 font-black border-t-2 border-slate-200">
+                    <td colSpan="3" className="px-6 py-6 text-right text-slate-400 text-[11px] uppercase tracking-widest">Total Acumulado</td>
+                    <td className="px-6 py-6 text-right text-xl font-mono text-red-900">{formatCurrency(totals.utilizado)}</td>
+                    <td colSpan="2" className="print:hidden"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+
+          {/* MODAL PREVIEW */}
+          {previewImage && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden" onClick={() => setPreviewImage(null)}>
+              <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setPreviewImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-all z-10">
+                  <X size={24} />
+                </button>
+                <img src={previewImage} alt="Preview" className="w-full h-auto max-h-[85vh] object-contain" />
+              </div>
+            </div>
+          )}
+
+          {/* FOOTER IMPRESSÃO */}
+          <section className="hidden print:block mt-20">
+            <div className="grid grid-cols-2 gap-20 px-10">
+              <div className="border-t-2 border-slate-900 pt-4 text-center">
+                <p className="font-black uppercase text-xs tracking-widest text-slate-900">{headerData.detentor}</p>
+                <p className="text-[10px] text-slate-500 font-medium italic mt-1">Assinatura do Detentor</p>
+                <p className="text-[9px] text-slate-400 mt-0.5">CPF: {headerData.cpf}</p>
+              </div>
+              <div className="border-t-2 border-slate-900 pt-4 text-center">
+                <p className="font-black uppercase text-xs tracking-widest text-slate-900">Financeiro / Gerência</p>
+                <p className="text-[10px] text-slate-500 font-medium italic mt-1">Aprovado em: ____ / ____ / ________</p>
+                <p className="text-[9px] text-slate-400 mt-0.5">Visto / Carimbo</p>
+              </div>
+            </div>
+            <div className="mt-20 text-center text-[9px] text-slate-300">
+              Relatório gerado digitalmente em {new Date().toLocaleString('pt-BR')}
+            </div>
+          </section>
+
         </div>
 
-        {/* INFO GERAIS */}
-        <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6 print:border">
-          <div className="flex items-center gap-2 text-slate-400 mb-2">
-            <User size={16} />
-            <h2 className="text-xs font-black uppercase tracking-widest">Informações do Detentor</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <InputField label="Detentor" name="detentor" value={headerData.detentor} onChange={handleHeaderChange} placeholder="Nome Completo" />
-            <InputField label="CPF" name="cpf" value={headerData.cpf} onChange={handleHeaderChange} placeholder="000.000.000-00" />
-            <InputField label="Loja / Unidade" name="loja" type="select" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
-            <InputField label="Data Prestação" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={handleHeaderChange} icon={<Calendar size={14} />} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <InputField label="Chave PIX (Reembolso)" name="chavePix" value={headerData.chavePix} onChange={handleHeaderChange} icon={<CreditCard size={14} />} />
-            <InputField label="Departamento" name="depto" value={headerData.depto} onChange={handleHeaderChange} />
-            <InputField label="Ajustar Fundo (R$)" name="fundoDisponibilizado" type="number" value={headerData.fundoDisponibilizado} onChange={handleHeaderChange} />
-          </div>
-        </section>
-
-        {/* TABELA DE DESPESAS */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border">
-          <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-8 bg-red-600 rounded-full"></div>
-              <h2 className="font-black text-slate-800 uppercase text-xs tracking-widest">Detalhamento de Gastos</h2>
-            </div>
-            <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-xs bg-red-600 text-white font-black px-4 py-2 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
-              <Plus size={16} /> NOVO LANÇAMENTO
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-400 text-[11px] uppercase font-black border-b border-slate-100">
-                  <th className="px-6 py-4 w-36">Data</th>
-                  <th className="px-6 py-4">Descrição e Fornecedor</th>
-                  <th className="px-6 py-4 w-28 text-center">Nº Doc</th>
-                  <th className="px-6 py-4 w-40 text-right">Valor</th>
-                  <th className="px-6 py-4 w-64 print:hidden">Comprovantes</th>
-                  <th className="px-6 py-4 w-12 print:hidden"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {transactions.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic">Nenhuma despesa lançada.</td>
-                  </tr>
-                )}
-                <AnimatePresence>
-                  {transactions.map((item) => (
-                    <motion.tr
-                      key={item.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="hover:bg-red-50/30 transition-colors group"
-                    >
-                      <td className="px-6 py-4 align-top">
-                        <input type="date" value={item.data} onChange={(e) => updateTransaction(item.id, 'data', e.target.value)} className="w-full text-xs font-bold outline-none bg-transparent text-slate-600 focus:text-red-600" />
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <input type="text" placeholder="Qual o motivo do gasto?" value={item.motivo} onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())} className="w-full text-sm font-bold outline-none bg-transparent mb-1 text-slate-800 placeholder:text-slate-300 focus:text-red-600" />
-                        <input type="text" placeholder="Nome do Fornecedor / Empresa" value={item.fornecedor} onChange={(e) => updateTransaction(item.id, 'fornecedor', e.target.value)} className="w-full text-[11px] text-slate-400 font-medium outline-none bg-transparent focus:text-slate-600 uppercase" />
-                      </td>
-                      <td className="px-6 py-4 align-top text-center">
-                        <input type="text" placeholder="000" value={item.nf} onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)} className="w-full text-xs text-center font-bold outline-none bg-transparent text-slate-500 focus:text-red-600" />
-                      </td>
-                      <td className="px-6 py-4 align-top text-right">
-                        <div className="flex items-center justify-end gap-1 font-mono font-black text-red-900 bg-red-50/50 px-3 py-1 rounded-lg">
-                          <span className="text-[10px] opacity-50">R$</span>
-                          <input type="number" step="0.01" value={item.valor} onChange={(e) => updateTransaction(item.id, 'valor', e.target.value)} className="w-20 text-right outline-none bg-transparent" />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top print:hidden">
-                        <div className="flex flex-col gap-2">
-                          <label className="flex items-center gap-2 text-[10px] font-black text-white bg-red-500 opacity-60 hover:opacity-100 transition-opacity cursor-pointer w-fit px-3 py-1.5 rounded-lg shadow-sm">
-                            <Paperclip size={12} /> ANEXAR
-                            <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, item.id)} />
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            {item.attachments.map((file, idx) => (
-                              <div key={idx} className="flex items-center gap-2 bg-slate-100 border border-slate-200 text-[10px] pl-2 pr-1 py-1 rounded-md text-slate-700 group/file">
-                                <FileText size={12} className="text-red-400" />
-                                <span className="truncate max-w-[100px] font-bold">{file.name}</span>
-                                <div className="flex items-center gap-0.5 ml-1">
-                                  <button onClick={() => openPreview(file)} className="p-1 text-slate-400 hover:text-red-600 transition-colors">
-                                    <Eye size={12} />
-                                  </button>
-                                  <button onClick={() => removeAttachment(item.id, idx)} className="p-1 text-slate-400 hover:text-red-500 transition-colors">
-                                    <X size={12} />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top text-right print:hidden">
-                        <button onClick={() => removeTransaction(item.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all"><Trash2 size={18} /></button>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </tbody>
-              <tfoot>
-                <tr className="bg-slate-50 font-black border-t-2 border-slate-200">
-                  <td colSpan="3" className="px-6 py-6 text-right text-slate-400 text-[11px] uppercase tracking-widest">Total Acumulado</td>
-                  <td className="px-6 py-6 text-right text-xl font-mono text-red-900">{formatCurrency(totals.utilizado)}</td>
-                  <td colSpan="2" className="print:hidden"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </section>
-
-        {/* MODAL PREVIEW */}
-        {previewImage && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden" onClick={() => setPreviewImage(null)}>
-            <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setPreviewImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-all z-10">
-                <X size={24} />
-              </button>
-              <img src={previewImage} alt="Preview" className="w-full h-auto max-h-[85vh] object-contain" />
-            </div>
-          </div>
-        )}
-
-        {/* FOOTER IMPRESSÃO */}
-        <section className="hidden print:block mt-20">
-          <div className="grid grid-cols-2 gap-20 px-10">
-            <div className="border-t-2 border-slate-900 pt-4 text-center">
-              <p className="font-black uppercase text-xs tracking-widest text-slate-900">{headerData.detentor}</p>
-              <p className="text-[10px] text-slate-500 font-medium italic mt-1">Assinatura do Detentor</p>
-              <p className="text-[9px] text-slate-400 mt-0.5">CPF: {headerData.cpf}</p>
-            </div>
-            <div className="border-t-2 border-slate-900 pt-4 text-center">
-              <p className="font-black uppercase text-xs tracking-widest text-slate-900">Financeiro / Gerência</p>
-              <p className="text-[10px] text-slate-500 font-medium italic mt-1">Aprovado em: ____ / ____ / ________</p>
-              <p className="text-[9px] text-slate-400 mt-0.5">Visto / Carimbo</p>
-            </div>
-          </div>
-          <div className="mt-20 text-center text-[9px] text-slate-300">
-            Relatório gerado digitalmente em {new Date().toLocaleString('pt-BR')}
-          </div>
-        </section>
-
+        {/* DEVELOPER FOOTER */}
+        <footer className="max-w-7xl mx-auto mt-12 mb-8 px-4 text-center space-y-2 print:hidden">
+          <p className="text-slate-400 text-xs font-medium tracking-wide">
+            Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 font-bold transition-colors">Allan Anjos</a>
+          </p>
+          <p className="text-slate-300 text-[10px] italic">
+            Desenvolvido com café ☕
+          </p>
+        </footer>
       </div>
-
-      {/* DEVELOPER FOOTER */}
-      <footer className="max-w-7xl mx-auto mt-12 mb-8 px-4 text-center space-y-2 print:hidden">
-        <p className="text-slate-400 text-xs font-medium tracking-wide">
-          Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 font-bold transition-colors">Allan Anjos</a>
-        </p>
-        <p className="text-slate-300 text-[10px] italic">
-          Desenvolvido com café ☕
-        </p>
-      </footer>
     </div>
   );
 };
