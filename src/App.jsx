@@ -22,6 +22,36 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 
+const STORES = [
+  { id: '1', name: 'JUMBO SANTA', type: 'MATRIZ', cnpj: '17.342.870/0001-41', manager: 'Jaqueline', phone: '41 9515-8594' },
+  { id: '2', name: 'JUMBO TORRES', type: 'FILIAL', cnpj: '17.342.870/0002-22', manager: 'Rosimar Robison', phone: '41 8468-7041' },
+  { id: '3', name: 'JUMBO CD', type: 'FILIAL', cnpj: '17.342.870/0003-03', manager: '', phone: '' },
+  { id: '4', name: 'JUMBO PINHAIS', type: '', cnpj: '17.342.870/0004-94', manager: 'Michele', phone: '' },
+  { id: '5', name: 'JUMBO ECOMMERCE', type: 'FILIAL', cnpj: '17.342.870/0005-75', manager: 'Marcos Cardoso', phone: '41 9634-7968' },
+  { id: '6', name: 'JUMBO PARANAGUÁ', type: 'FILIAL', cnpj: '17.342.870/0006-56', manager: 'Dennis Keller', phone: '41 9864-7874' },
+  { id: '7', name: 'JUMBO FANNY', type: 'FILIAL', cnpj: '17.342.870/0007-37', manager: 'Ivan Nícássio', phone: '41 9194-8920' },
+  { id: '8', name: 'JUMBO FAZENDA RIO GRANDE', type: 'FILIAL', cnpj: '17.342.870/0008-18', manager: 'Sheila', phone: '' },
+  { id: '10', name: 'JUMBO XAXIM', type: 'FILIAL', cnpj: '17.342.870/0010-32', manager: 'Maria Franciely', phone: '41 9803-7709' },
+  { id: '11', name: 'JUMBO FAZENDINHA', type: 'FILIAL', cnpj: '17.342.870/0011-13', manager: 'Jorge Belotto', phone: '41 9854-3378' },
+  { id: '12', name: 'JUMBO BOULEVARD', type: 'FILIAL', cnpj: '17.342.870/0012-02', manager: 'Anderson Oliveira', phone: '41 9923-3857' },
+  { id: '14', name: 'JUMBO COLOMBO', type: 'FILIAL', cnpj: '17.342.870/0014-66', manager: 'Diego', phone: '' },
+  { id: '17', name: 'JUMBO SALVADOS XAXIM', type: 'FILIAL', cnpj: '17.342.870/0017-09', manager: 'Maria Franciely', phone: '41 9803-7709' },
+  { id: '18', name: 'JUMBO SALVADOS FANNY', type: 'FILIAL', cnpj: '17.342.870/0018-90', manager: 'Luiz Traldi', phone: '41 9630-5527' },
+  { id: '19', name: 'JUMBO ARAUCÁRIA', type: 'FILIAL', cnpj: '17.342.870/0022-76', manager: 'Orli Tadeu', phone: '41 9682-8703' },
+  { id: 'BACACHERI', name: 'JUMBO BACACHERI', type: 'FILIAL', cnpj: '', manager: 'Eduardo', phone: '' },
+  { id: '201', name: 'JUMBO BAL CAMBORIU', type: 'FILIAL', cnpj: '17.342.870/0013-85', manager: 'João Paiva', phone: '41 9942-8365' },
+  { id: '202', name: 'JUMBO ITAJAI', type: 'FILIAL', cnpj: '17.342.870/0015-47', manager: 'Thiago', phone: '47 9281-1723' },
+  { id: '206', name: 'JUMBO ARAQUARI', type: 'FILIAL', cnpj: '17.342.870/0023-57', manager: 'Márcio Fernadnes', phone: '41 8712-5493' },
+  { id: '208', name: 'JUMBO JOINVILLE', type: 'FILIAL', cnpj: '17.342.870/0026-08', manager: 'Huanderson', phone: '92 9363-8369' },
+  { id: '301', name: 'JUMBO VILA VELHA', type: 'FILIAL', cnpj: '17.342.870/0029-42', manager: 'Marco Antonio', phone: '27 99646-6111' },
+  { id: '303', name: 'JUMBO SERRA', type: 'FILIAL', cnpj: '17.342.870/0003-86', manager: 'Erika', phone: '27 99889-0123' },
+  { id: '304', name: 'JUMBO VITORIA', type: 'FILIAL', cnpj: '17.342.870/0032-48', manager: 'Leonardo', phone: '27 99736-3979' },
+  { id: '305', name: 'JUMBO LINHARES', type: 'FILIAL', cnpj: '17.342.870/0031-67', manager: 'Suelen', phone: '' },
+  { id: '306', name: 'JUMBO CD ES', type: 'FILIAL', cnpj: '17.342.870/0034-00', manager: 'Dani Nascimento', phone: '27 99511-4411' },
+  { id: '307', name: 'JUMBO GLORIA', type: 'FILIAL', cnpj: '17.342.870/0035-90', manager: 'Rackilane', phone: '' },
+  { id: '308', name: 'JUMBO DAY BY DAY', type: 'FILIAL', cnpj: '17.342.870/0033-29', manager: 'Namar', phone: '21 96732-7937' },
+];
+
 const App = () => {
   // --- Estados da Aplicação ---
   const initialHeader = {
@@ -201,6 +231,18 @@ const App = () => {
         .substring(0, 14);
     }
 
+    if (name === 'loja') {
+      const selectedStore = STORES.find(s => s.name === value || `${s.name} – ${s.id}` === value);
+      if (selectedStore) {
+        setHeaderData(prev => ({
+          ...prev,
+          loja: value,
+          detentor: selectedStore.manager.toUpperCase()
+        }));
+        return;
+      }
+    }
+
     setHeaderData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -280,7 +322,7 @@ const App = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <InputField label="Detentor" name="detentor" value={headerData.detentor} onChange={handleHeaderChange} placeholder="Nome Completo" />
             <InputField label="CPF" name="cpf" value={headerData.cpf} onChange={handleHeaderChange} placeholder="000.000.000-00" />
-            <InputField label="Loja / Unidade" name="loja" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
+            <InputField label="Loja / Unidade" name="loja" type="select" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
             <InputField label="Data Prestação" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={handleHeaderChange} icon={<Calendar size={14} />} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -456,10 +498,24 @@ const InputField = ({ label, icon, ...props }) => (
       {icon} {label}
     </label>
     <div className="relative">
-      <input
-        {...props}
-        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
-      />
+      {props.type === 'select' ? (
+        <select
+          {...props}
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none"
+        >
+          <option value="">Selecione...</option>
+          {STORES.map(s => (
+            <option key={s.id} value={`${s.name} – ${s.id}`}>
+              {s.name} {s.id && `– ${s.id}`}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          {...props}
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+        />
+      )}
     </div>
   </div>
 );
