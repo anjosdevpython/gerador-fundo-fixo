@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/gerador-fundo-fixo/',
+  base: process.env.VERCEL ? '/' : '/gerador-fundo-fixo/',
   plugins: [
     react(),
     tailwindcss(),
