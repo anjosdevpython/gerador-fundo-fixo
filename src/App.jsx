@@ -349,32 +349,32 @@ const App = () => {
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* HEADER */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 print:hidden">
-          <div className="flex items-center gap-6">
-            <img src="./logo.png" alt="Mini Preço" className="h-12 w-auto object-contain" />
+        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 print:hidden">
+          <div className="flex items-center gap-4 md:gap-6">
+            <img src="./logo.png" alt="Mini Preço" className="h-10 md:h-12 w-auto object-contain" />
             <div className="h-10 w-px bg-slate-200 hidden md:block"></div>
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">Prestação de Contas</h1>
-              <p className="text-slate-500 font-medium text-sm">Controle de Fundo Fixo Profissional</p>
+              <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Prestação de Contas</h1>
+              <p className="text-slate-500 font-medium text-[10px] md:text-sm">Controle de Fundo Fixo Profissional</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2 md:gap-3">
             <button
               onClick={resetForm}
-              className="group flex items-center gap-2 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold px-4 py-2.5 rounded-xl transition-all text-sm shadow-sm"
+              className="flex-1 md:flex-none group flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold px-3 py-2.5 rounded-xl transition-all text-xs md:text-sm shadow-sm"
             >
-              <RefreshCcw size={18} className="group-hover:rotate-180 transition-transform duration-500" /> Reiniciar
+              <RefreshCcw size={16} className="group-hover:rotate-180 transition-transform duration-500" /> Reiniciar
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl transition-all text-sm shadow-md"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2.5 rounded-xl transition-all text-xs md:text-sm shadow-md"
             >
-              <Printer size={18} /> Gerar PDF
+              <Printer size={16} /> Relatório
             </button>
             <button
               onClick={generateZipPackage}
               disabled={isProcessingZip}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-200 text-white font-black px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-red-100 active:scale-95 text-sm"
+              className="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-200 text-white font-black px-6 py-3 rounded-xl transition-all shadow-lg shadow-red-100 active:scale-95 text-xs md:text-sm"
             >
               {isProcessingZip ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
               Exportar Pacote ZIP
@@ -428,17 +428,113 @@ const App = () => {
 
           {/* TABELA DE DESPESAS */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border">
-            <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
+            <div className="p-4 md:p-5 border-b flex justify-between items-center bg-slate-50/50">
               <div className="flex items-center gap-3">
-                <div className="w-2 h-8 bg-red-600 rounded-full"></div>
-                <h2 className="font-black text-slate-800 uppercase text-xs tracking-widest">Detalhamento de Gastos</h2>
+                <div className="w-2 h-7 md:h-8 bg-red-600 rounded-full"></div>
+                <h2 className="font-black text-slate-800 uppercase text-[10px] md:text-xs tracking-widest">Detalhamento de Gastos</h2>
               </div>
-              <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-xs bg-red-600 text-white font-black px-4 py-2 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
+              <button onClick={addTransaction} className="print:hidden flex items-center gap-2 text-[10px] md:text-xs bg-red-600 text-white font-black px-4 py-2.5 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
                 <Plus size={16} /> NOVO LANÇAMENTO
               </button>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile Cards (sc only) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {transactions.length === 0 && (
+                <div className="p-8 text-center text-slate-400 italic text-sm">Nenhuma despesa lançada.</div>
+              )}
+              {transactions.map((item) => (
+                <div key={item.id} className="p-4 space-y-4 bg-white hover:bg-slate-50 transition-colors">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1 space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Item #{item.id}</p>
+                      <input
+                        type="text"
+                        placeholder="Motivo do gasto"
+                        value={item.motivo}
+                        onChange={(e) => updateTransaction(item.id, 'motivo', e.target.value.toUpperCase())}
+                        className="w-full text-base font-bold outline-none bg-transparent text-slate-800 placeholder:text-slate-300 focus:text-red-600"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Fornecedor"
+                        value={item.fornecedor}
+                        onChange={(e) => updateTransaction(item.id, 'fornecedor', e.target.value)}
+                        className="w-full text-xs text-slate-500 font-medium outline-none bg-transparent focus:text-slate-600 uppercase"
+                      />
+                    </div>
+                    <button onClick={() => removeTransaction(item.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex-shrink-0">
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase">Data</label>
+                      <input
+                        type="date"
+                        value={item.data}
+                        onChange={(e) => updateTransaction(item.id, 'data', e.target.value)}
+                        className="w-full text-sm font-bold bg-slate-50 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-red-100"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase">Nº Documento</label>
+                      <input
+                        type="text"
+                        placeholder="000"
+                        value={item.nf}
+                        onChange={(e) => updateTransaction(item.id, 'nf', e.target.value)}
+                        className="w-full text-sm font-bold bg-slate-50 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-red-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 pt-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 font-mono font-black text-red-900 bg-red-50 px-4 py-3 rounded-xl border border-red-100">
+                        <span className="text-xs opacity-50">R$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.valor}
+                          onChange={(e) => updateTransaction(item.id, 'valor', e.target.value)}
+                          className="w-full text-lg outline-none bg-transparent"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0">
+                      <label className="flex items-center gap-2 text-xs font-black text-white bg-red-600 hover:bg-red-700 px-4 py-3 rounded-xl shadow-md transition-all cursor-pointer">
+                        <Paperclip size={16} /> {item.attachments.length > 0 ? `${item.attachments.length}` : 'ANEXAR'}
+                        <input type="file" multiple className="hidden" onChange={(e) => handleFileChange(e, item.id)} />
+                      </label>
+                    </div>
+                  </div>
+
+                  {item.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {item.attachments.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 bg-slate-100 px-2 py-1.5 rounded-lg border border-slate-200">
+                          <Eye size={14} className="text-red-500" onClick={() => openPreview(file)} />
+                          <span className="text-[10px] font-bold truncate max-w-[80px]">{file.name}</span>
+                          <X size={14} className="text-slate-400 hover:text-red-500" onClick={() => removeAttachment(item.id, idx)} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {transactions.length > 0 && (
+                <div className="p-5 bg-slate-50 flex justify-between items-center text-sm">
+                  <span className="font-extrabold text-slate-400 uppercase tracking-widest text-[10px]">Total do Lote</span>
+                  <span className="text-lg font-black text-red-900 font-mono">{formatCurrency(totals.utilizado)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table (md+ only) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-400 text-[11px] uppercase font-black border-b border-slate-100">
@@ -573,30 +669,30 @@ const App = () => {
 // --- Componentes Atômicos ---
 
 const StatCard = ({ label, value, icon, trend, trendColor = "text-slate-400", colorClass = "bg-white text-slate-900" }) => (
-  <div className={`${colorClass} border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between transition-all hover:shadow-md hover:translate-y-[-2px] relative overflow-hidden group`}>
-    <div className="flex justify-between items-start mb-4">
-      <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-white transition-colors border border-transparent group-hover:border-slate-100 shadow-sm">{icon}</div>
-      <div className={`text-[10px] font-black uppercase tracking-tighter px-2 py-1 rounded-md ${trendColor} bg-slate-50 group-hover:bg-white`}>{trend}</div>
+  <div className={`${colorClass} border border-slate-200 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col justify-between transition-all hover:shadow-md hover:translate-y-[-2px] relative overflow-hidden group`}>
+    <div className="flex justify-between items-start mb-2 md:mb-4">
+      <div className="p-2.5 md:p-3 bg-slate-50 rounded-2xl group-hover:bg-white transition-colors border border-transparent group-hover:border-slate-100 shadow-sm">{icon}</div>
+      <div className={`text-[9px] md:text-[10px] font-black uppercase tracking-tighter px-2 py-1 rounded-md ${trendColor} bg-slate-50 group-hover:bg-white`}>{trend}</div>
     </div>
     <div>
-      <p className="text-[11px] font-bold text-slate-400 uppercase mb-1 tracking-wider">{label}</p>
-      <p className="text-3xl font-black tracking-tight font-mono">{value}</p>
+      <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase mb-0.5 md:mb-1 tracking-wider">{label}</p>
+      <p className="text-xl md:text-3xl font-black tracking-tight font-mono">{value}</p>
     </div>
     {/* Subtle decorative circle */}
-    <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+    <div className="absolute -right-4 -bottom-4 w-16 md:w-24 h-16 md:h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
   </div>
 );
 
 const InputField = ({ label, icon, ...props }) => (
-  <div className="flex flex-col gap-2">
-    <label className="text-[11px] font-black text-slate-400 uppercase flex items-center gap-2 ml-1 tracking-widest">
+  <div className="flex flex-col gap-1.5 md:gap-2">
+    <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase flex items-center gap-2 ml-1 tracking-widest leading-none">
       {icon} {label} {props.required && <span className="text-red-500">*</span>}
     </label>
     <div className="relative">
       {props.type === 'select' ? (
         <select
           {...props}
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 md:py-3.5 text-sm focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none min-h-[48px]"
         >
           <option value="">Selecione...</option>
           {STORES.map((s, idx) => (
@@ -608,7 +704,7 @@ const InputField = ({ label, icon, ...props }) => (
       ) : (
         <input
           {...props}
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 md:py-3.5 text-sm focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 min-h-[48px]"
         />
       )}
     </div>
