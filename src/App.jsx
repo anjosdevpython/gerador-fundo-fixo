@@ -421,6 +421,16 @@ const App = () => {
         </section>
 
       </div>
+
+      {/* DEVELOPER FOOTER */}
+      <footer className="max-w-7xl mx-auto mt-12 mb-8 px-4 text-center space-y-2 print:hidden">
+        <p className="text-slate-400 text-xs font-medium tracking-wide">
+          Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:text-indigo-600 font-bold transition-colors">Allan Anjos</a>
+        </p>
+        <p className="text-slate-300 text-[10px] italic">
+          Desenvolvido com café ☕
+        </p>
+      </footer>
     </div>
   );
 };
