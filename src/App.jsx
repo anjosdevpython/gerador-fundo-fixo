@@ -558,10 +558,10 @@ const App = () => {
 
         {/* DEVELOPER FOOTER */}
         <footer className="max-w-7xl mx-auto mt-12 mb-8 px-4 text-center space-y-2 print:hidden">
-          <p className="text-slate-400 text-xs font-medium tracking-wide">
+          <p className="text-slate-400 text-sm font-medium tracking-wide">
             Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 font-bold transition-colors">Allan Anjos</a>
           </p>
-          <p className="text-slate-300 text-[10px] italic">
+          <p className="text-slate-300 text-xs italic">
             Desenvolvido com café ☕
           </p>
         </footer>
