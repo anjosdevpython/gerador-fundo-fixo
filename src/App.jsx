@@ -228,7 +228,17 @@ const Generator = ({ onSaveRecord }) => {
         scale: 2,
         useCORS: true,
         logging: false,
-        allowTaint: true
+        allowTaint: true,
+        onclone: (clonedDoc) => {
+          const elements = clonedDoc.getElementsByTagName('*');
+          for (let i = 0; i < elements.length; i++) {
+            const el = elements[i];
+            const style = window.getComputedStyle(el);
+            if (style.color.includes('oklch')) el.style.color = '#334155';
+            if (style.backgroundColor.includes('oklch')) el.style.backgroundColor = '#ffffff';
+            if (style.borderColor.includes('oklch')) el.style.borderColor = '#e2e8f0';
+          }
+        }
       });
 
       const imgData = canvas.toDataURL('image/png');
