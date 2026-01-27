@@ -254,24 +254,62 @@ const Generator = ({ onSaveRecord }) => {
     }
   };
 
+  // Auxiliar para converter Blob em Base64 (necessário para o Power Automate)
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleSharePointSync = async () => {
     if (!validateHeader()) return;
+
+    if (!SHAREPOINT_WEBHOOK_URL) {
+      alert("Atenção: A URL do Webhook do SharePoint não está configurada no código. O registro será salvo apenas no histórico local.");
+    }
+
     setIsSyncingSharePoint(true);
 
     // Pequeno delay para permitir que o navegador renderize o estado de "loading" antes da tarefa pesada
     setTimeout(async () => {
       try {
         const pdfBlob = await generatePDFReport();
+
+        let syncStatus = 'Pending';
+
+        // Se houver URL, tenta o envio real
+        if (SHAREPOINT_WEBHOOK_URL) {
+          const base64Content = await blobToBase64(pdfBlob);
+          const response = await fetch(SHAREPOINT_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName: `PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}.pdf`,
+              fileContent: base64Content,
+              detentor: headerData.detentor,
+              loja: headerData.loja,
+              valorTotal: totals.utilizado,
+              data: headerData.dataPrestacao
+            })
+          });
+
+          if (!response.ok) throw new Error(`Falha no servidor: ${response.statusText}`);
+          syncStatus = 'Synced';
+        }
+
         const record = {
           id: Date.now(),
           header: headerData,
           total: totals.utilizado,
           timestamp: new Date().toLocaleString('pt-BR'),
-          status: 'Synced'
+          status: syncStatus
         };
 
         onSaveRecord(record);
-        alert("Relatório sincronizado com sucesso!");
+        alert(SHAREPOINT_WEBHOOK_URL ? "Relatório enviado ao SharePoint com sucesso!" : "Salvo no histórico local (Webhook ausente).");
       } catch (e) {
         console.error("Erro crítico na sincronização:", e);
         alert("Erro na sincronização: " + (e.message || "Erro desconhecido"));
