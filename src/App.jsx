@@ -23,55 +23,55 @@ import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 
 const STORES = [
-  { id: '1', name: 'JUMBO SANTA – MINI', manager: 'Jaqueline' },
-  { id: '1', name: 'JUMBO SANTA – SALVADOS', manager: 'Valquíria' },
-  { id: '2', name: 'JUMBO TORRES – MINI', manager: 'Rosimar Robison' },
-  { id: '2', name: 'JUMBO TORRES – SALVADOS', manager: 'Lucas Pego' },
-  { id: '3', name: 'JUMBO CD', manager: '' },
-  { id: '4', name: 'JUMBO PINHAIS – MINI', manager: 'Michele' },
-  { id: '4', name: 'JUMBO PINHAIS – SALVADOS', manager: 'Carlos Eduardo' },
-  { id: '5', name: 'JUMBO ECOMMERCE', manager: 'Marcos Cardoso' },
-  { id: '6', name: 'JUMBO PARANAGUÁ', manager: 'Dennis Keller' },
-  { id: '7', name: 'JUMBO FANNY – MINI', manager: 'Ivan Nícássio' },
-  { id: '8', name: 'JUMBO FAZENDA RIO GRANDE', manager: 'Sheila' },
-  { id: '10', name: 'JUMBO XAXIM', manager: 'Maria Franciely' },
-  { id: '11', name: 'JUMBO FAZENDINHA – MINI', manager: 'Jorge Belotto' },
-  { id: '11', name: 'JUMBO FAZENDINHA – SALVADOS', manager: 'Gabriele Fernandes' },
-  { id: '12', name: 'JUMBO BOULEVARD', manager: 'Anderson Oliveira' },
-  { id: '14', name: 'JUMBO COLOMBO', manager: 'Diego' },
-  { id: '17', name: 'JUMBO SALVADOS XAXIM', manager: 'Maria Franciely' },
-  { id: '18', name: 'JUMBO SALVADOS FANNY', manager: 'Luiz Traldi' },
-  { id: '19', name: 'JUMBO ARAUCÁRIA', manager: 'Orli Tadeu' },
-  { id: 'BACACHERI', name: 'JUMBO BACACHERI', manager: 'Eduardo' },
-  { id: '201', name: 'JUMBO BAL CAMBORIU', manager: 'João Paiva' },
-  { id: '202', name: 'JUMBO ITAJAI', manager: 'Thiago' },
-  { id: '206', name: 'JUMBO ARAQUARI', manager: 'Márcio Fernandes' },
-  { id: '208', name: 'JUMBO JOINVILLE', manager: 'Huanderson' },
-  { id: '301', name: 'JUMBO VILA VELHA', manager: 'Marco Antonio' },
-  { id: '303', name: 'JUMBO SERRA', manager: 'Erika' },
-  { id: '304', name: 'JUMBO VITORIA', manager: 'Leonardo' },
-  { id: '305', name: 'JUMBO LINHARES', manager: 'Suelen' },
-  { id: '306', name: 'JUMBO CD ES', manager: 'Dani Nascimento' },
-  { id: '307', name: 'JUMBO GLORIA', manager: 'Rackilane' },
-  { id: '308', name: 'JUMBO DAY BY DAY', manager: 'Namar' },
+  { id: '1', name: 'Mini | Santa | Loja 1', manager: 'Jaqueline' },
+  { id: '1', name: 'Salvados | Santa | Loja 1', manager: 'Valquíria' },
+  { id: '2', name: 'Mini | Torres | Loja 2', manager: 'Rosimar Robison' },
+  { id: '2', name: 'Salvados | Torres | Loja 2', manager: 'Lucas Pego' },
+  { id: '3', name: 'Centro de Distribuição | Loja 3', manager: '' },
+  { id: '4', name: 'Mini | Pinhais | Loja 4', manager: 'Michele' },
+  { id: '4', name: 'Salvados | Pinhais | Loja 4', manager: 'Carlos Eduardo' },
+  { id: '5', name: 'Ecommerce | Loja 5', manager: 'Marcos Cardoso' },
+  { id: '6', name: 'Mini/Salvados | Paranaguá | Loja 6', manager: 'Dennis Keller' },
+  { id: '7', name: 'Mini | Fanny | Loja 7', manager: 'Ivan Nícássio' },
+  { id: '8', name: 'Mini/Salvados | Fazenda Rio Grande | Loja 8', manager: 'Sheila' },
+  { id: '10', name: 'Mini/Salvados | Xaxim | Loja 10', manager: 'Maria Franciely' },
+  { id: '11', name: 'Mini | Fazendinha | Loja 11', manager: 'Jorge Belotto' },
+  { id: '11', name: 'Salvados | Fazendinha | Loja 11', manager: 'Gabriele Fernandes' },
+  { id: '12', name: 'Mini | Boulevard | Loja 12', manager: 'Anderson Oliveira' },
+  { id: '14', name: 'Mini/Salvados | Colombo | Loja 14', manager: 'Diego' },
+  { id: '17', name: 'Salvados | Xaxim | Loja 17', manager: 'Maria Franciely' },
+  { id: '18', name: 'Salvados | Fanny | Loja 18', manager: 'Luiz Traldi' },
+  { id: '19', name: 'Mini/Salvados | Araucária | Loja 19', manager: 'Orli Tadeu' },
+  { id: 'BACACHERI', name: 'Mini | Bacacheri', manager: 'Eduardo' },
+  { id: '201', name: 'Salvados | Bal Camboriú | Loja 201', manager: 'João Paiva' },
+  { id: '202', name: 'Salvados | Itajaí | Loja 202', manager: 'Thiago' },
+  { id: '206', name: 'Araquari | Loja 206', manager: 'Márcio Fernandes' },
+  { id: '208', name: 'Joinville | Loja 208', manager: 'Huanderson' },
+  { id: '301', name: 'Mini | Vila Velha | Loja 301', manager: 'Marco Antonio' },
+  { id: '303', name: 'Mini | Serra | Loja 303', manager: 'Erika' },
+  { id: '304', name: 'Mini | Vitória | Loja 304', manager: 'Leonardo' },
+  { id: '305', name: 'Linhares | Loja 305', manager: 'Suelen' },
+  { id: '306', name: 'Mini | CD ES | Loja 306', manager: 'Dani Nascimento' },
+  { id: '307', name: 'Mini | Glória | Loja 307', manager: 'Rackilane' },
+  { id: '308', name: 'Mini | Day by Day | Loja 308', manager: 'Namar' },
   // RDS Units
-  { id: '1', name: 'RDS SANTA FELICIDADE – GERENTE', manager: 'Valquiria Aparecida de Oliveira Goncalves' },
-  { id: '2', name: 'RDS AV. DAS TORRES – GERENTE', manager: 'Lucas Tiago Ferreira Pego' },
-  { id: '2', name: 'RDS AV. DAS TORRES – LÍDER', manager: 'Rosenilda de Oliveira Tome Martins' },
-  { id: '4', name: 'RDS PINHAIS – GERENTE', manager: 'Carlos Eduardo Lukaszevski' },
-  { id: '4', name: 'RDS PINHAIS – LÍDER', manager: 'Robi Leandro Pereira Arruda Ueque' },
-  { id: '6', name: 'RDS PARANAGUÁ – GERENTE', manager: 'Dennis' },
-  { id: '6', name: 'RDS PARANAGUÁ – LÍDER', manager: 'Joice Maiara Correa Sampaio' },
-  { id: '8', name: 'RDS FAZENDA – GERENTE', manager: 'Elaine Graciele Massaneiro do Nascimento' },
-  { id: '8', name: 'RDS FAZENDA – LÍDER', manager: 'Dirlene Aparecida Freitas dos Santos' },
-  { id: '9', name: 'RDS SÍTIO CERCADO – GERENTE', manager: 'Bruno Adriano Gomes Mendes' },
-  { id: '11', name: 'RDS FAZENDINHA – GERENTE', manager: 'Gabriele Fernandes de Lima' },
-  { id: '14', name: 'RDS COLOMBO – LÍDER', manager: 'Carolina Martins Floriano' },
-  { id: '17', name: 'RDS XAXIM – GERENTE', manager: 'Maria Francielly Vieira de Cerqueira' },
-  { id: '17', name: 'RDS XAXIM – LÍDER', manager: 'Eduardo da Silva Canha Machado' },
-  { id: '18', name: 'RDS FANNY – GERENTE', manager: 'Luiz Alberto Nogueira Traldi' },
-  { id: '19', name: 'RDS ARAUCÁRIA – GERENTE', manager: 'Orli' },
-  { id: '19', name: 'RDS ARAUCÁRIA – LÍDER', manager: 'Janaina Aparecida Pereira' },
+  { id: '1', name: 'RDS | Santa Felicidade | Gerente | Loja 1', manager: 'Valquiria Aparecida de Oliveira Goncalves' },
+  { id: '2', name: 'RDS | Av. das Torres | Gerente | Loja 2', manager: 'Lucas Tiago Ferreira Pego' },
+  { id: '2', name: 'RDS | Av. das Torres | Líder | Loja 2', manager: 'Rosenilda de Oliveira Tome Martins' },
+  { id: '4', name: 'RDS | Pinhais | Gerente | Loja 4', manager: 'Carlos Eduardo Lukaszevski' },
+  { id: '4', name: 'RDS | Pinhais | Líder | Loja 4', manager: 'Robi Leandro Pereira Arruda Ueque' },
+  { id: '6', name: 'RDS | Paranaguá | Gerente | Loja 6', manager: 'Dennis' },
+  { id: '6', name: 'RDS | Paranaguá | Líder | Loja 6', manager: 'Joice Maiara Correa Sampaio' },
+  { id: '8', name: 'RDS | Fazenda | Gerente | Loja 8', manager: 'Elaine Graciele Massaneiro do Nascimento' },
+  { id: '8', name: 'RDS | Fazenda | Líder | Loja 8', manager: 'Dirlene Aparecida Freitas dos Santos' },
+  { id: '9', name: 'RDS | Sítio Cercado | Gerente | Loja 9', manager: 'Bruno Adriano Gomes Mendes' },
+  { id: '11', name: 'RDS | Fazendinha | Gerente | Loja 11', manager: 'Gabriele Fernandes de Lima' },
+  { id: '14', name: 'RDS | Colombo | Líder | Loja 14', manager: 'Carolina Martins Floriano' },
+  { id: '17', name: 'RDS | Xaxim | Gerente | Loja 17', manager: 'Maria Francielly Vieira de Cerqueira' },
+  { id: '17', name: 'RDS | Xaxim | Líder | Loja 17', manager: 'Eduardo da Silva Canha Machado' },
+  { id: '18', name: 'RDS | Fanny | Gerente | Loja 18', manager: 'Luiz Alberto Nogueira Traldi' },
+  { id: '19', name: 'RDS | Araucária | Gerente | Loja 19', manager: 'Orli' },
+  { id: '19', name: 'RDS | Araucária | Líder | Loja 19', manager: 'Janaina Aparecida Pereira' },
 ];
 
 const App = () => {
@@ -254,7 +254,7 @@ const App = () => {
     }
 
     if (name === 'loja') {
-      const selectedStore = STORES.find(s => s.name === value || `${s.name} – ${s.id}` === value);
+      const selectedStore = STORES.find(s => s.name === value);
       if (selectedStore) {
         setHeaderData(prev => ({
           ...prev,
@@ -526,9 +526,9 @@ const InputField = ({ label, icon, ...props }) => (
           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none"
         >
           <option value="">Selecione...</option>
-          {STORES.map(s => (
-            <option key={s.id} value={`${s.name} – ${s.id}`}>
-              {s.name} {s.id && `– ${s.id}`}
+          {STORES.map((s, idx) => (
+            <option key={idx} value={s.name}>
+              {s.name}
             </option>
           ))}
         </select>
