@@ -220,37 +220,54 @@ const Generator = ({ onSaveRecord }) => {
   };
 
   const generatePDFReport = async () => {
-    const element = document.getElementById('print-area');
-    if (!element) return null;
-    const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    return pdf.output('blob');
+    try {
+      const element = document.getElementById('print-area');
+      if (!element) throw new Error("Área de impressão não encontrada");
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        allowTaint: true
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      return pdf.output('blob');
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      throw error;
+    }
   };
 
   const handleSharePointSync = async () => {
     if (!validateHeader()) return;
     setIsSyncingSharePoint(true);
-    try {
-      const pdfBlob = await generatePDFReport();
-      const record = {
-        id: Date.now(),
-        header: headerData,
-        total: totals.utilizado,
-        timestamp: new Date().toLocaleString('pt-BR'),
-        status: 'Synced'
-      };
 
-      onSaveRecord(record);
-      alert("Relatório enviado para o SharePoint!");
-    } catch (e) {
-      alert("Erro na sincronização.");
-    } finally {
-      setIsSyncingSharePoint(false);
-    }
+    // Pequeno delay para permitir que o navegador renderize o estado de "loading" antes da tarefa pesada
+    setTimeout(async () => {
+      try {
+        const pdfBlob = await generatePDFReport();
+        const record = {
+          id: Date.now(),
+          header: headerData,
+          total: totals.utilizado,
+          timestamp: new Date().toLocaleString('pt-BR'),
+          status: 'Synced'
+        };
+
+        onSaveRecord(record);
+        alert("Relatório sincronizado com sucesso!");
+      } catch (e) {
+        console.error("Erro crítico na sincronização:", e);
+        alert("Erro na sincronização: " + (e.message || "Erro desconhecido"));
+      } finally {
+        setIsSyncingSharePoint(false);
+      }
+    }, 100);
   };
 
   const generateZipPackage = async () => {
