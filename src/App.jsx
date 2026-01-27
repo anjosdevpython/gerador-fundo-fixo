@@ -280,7 +280,7 @@ const Generator = ({ onSaveRecord }) => {
 
         let syncStatus = 'Pending';
 
-        // Se houver URL, tenta o envio real
+        // Tenta sincronização real
         if (SHAREPOINT_WEBHOOK_URL) {
           const base64Content = await blobToBase64(pdfBlob);
           const response = await fetch(SHAREPOINT_WEBHOOK_URL, {
@@ -296,8 +296,30 @@ const Generator = ({ onSaveRecord }) => {
             })
           });
 
-          if (!response.ok) throw new Error(`Falha no servidor: ${response.statusText}`);
+          if (!response.ok) throw new Error(`Falha no SharePoint: ${response.statusText}`);
           syncStatus = 'Synced';
+        } else {
+          // Fallback para servidor local (Auto-Hospedagem)
+          try {
+            const base64Content = await blobToBase64(pdfBlob);
+            const response = await fetch('/api/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fileName: `PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}.pdf`,
+                fileContent: base64Content,
+                detentor: headerData.detentor,
+                loja: headerData.loja
+              })
+            });
+
+            if (response.ok) {
+              syncStatus = 'Synced';
+              alert("Relatório salvo diretamente no servidor!");
+            }
+          } catch (e) {
+            console.warn("Servidor local não encontrado, salvando apenas em cache.");
+          }
         }
 
         const record = {
@@ -358,9 +380,17 @@ const Generator = ({ onSaveRecord }) => {
           <button onClick={() => window.print()} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all font-sans">
             <Printer size={16} /> Imprimir
           </button>
-          <button onClick={handleSharePointSync} disabled={isSyncingSharePoint} className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all font-sans">
-            {isSyncingSharePoint ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-            Sincronizar SharePoint
+          <button
+            onClick={handleSharePointSync}
+            disabled={isSyncingSharePoint}
+            className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all font-sans disabled:opacity-50"
+          >
+            {isSyncingSharePoint ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <Send size={14} />
+            )}
+            {SHAREPOINT_WEBHOOK_URL ? "Sincronizar SharePoint" : "Sincronizar Servidor"}
           </button>
           <button onClick={generateZipPackage} disabled={isProcessingZip} className="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-red-100 hover:bg-red-700 transition-all font-sans">
             {isProcessingZip ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
