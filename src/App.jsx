@@ -25,20 +25,18 @@ import JSZip from 'jszip';
 const App = () => {
   // --- Estados da Aplicação ---
   const initialHeader = {
-    detentor: 'HUANDERSON MAIA CORREIA',
-    cpf: '938.941.552-72',
-    loja: 'JOINVILLE – 208',
-    depto: 'Financeiro',
+    detentor: '',
+    cpf: '',
+    loja: '',
+    depto: '',
     gerente: '',
-    chavePix: 'hmc12maia@gmail.com',
-    fundoDisponibilizado: 300.00,
+    chavePix: '',
+    fundoDisponibilizado: 0,
     dataPrestacao: new Date().toISOString().split('T')[0]
   };
 
   const [headerData, setHeaderData] = useState(initialHeader);
-  const [transactions, setTransactions] = useState([
-    { id: 1, data: '2025-01-06', motivo: 'LIMPEZA DA FRENTE DA LOJA', fornecedor: 'PRESTADOR LOCAL', nf: '', valor: 50.00, attachments: [] },
-  ]);
+  const [transactions, setTransactions] = useState([]);
 
   const [isProcessingZip, setIsProcessingZip] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
