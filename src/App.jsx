@@ -215,8 +215,40 @@ const App = () => {
     return pdf.output('blob');
   };
 
+  const validateHeader = () => {
+    const requiredFields = [
+      { key: 'detentor', label: 'Detentor' },
+      { key: 'cpf', label: 'CPF' },
+      { key: 'loja', label: 'Loja / Unidade' },
+      { key: 'chavePix', label: 'Chave PIX' },
+      { key: 'depto', label: 'Departamento' }
+    ];
+
+    const missingFields = requiredFields.filter(f => !headerData[f.key]);
+
+    if (missingFields.length > 0) {
+      alert(`Por favor, preencha os campos obrigatórios:\n- ${missingFields.map(f => f.label).join('\n- ')}`);
+      return false;
+    }
+
+    if (headerData.fundoDisponibilizado <= 0) {
+      alert("O valor do fundo disponibilizado deve ser maior que zero.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handlePrint = () => {
+    if (validateHeader()) {
+      window.print();
+    }
+  };
+
   // --- Geração de ZIP (Relatório PDF + Anexos) ---
   const generateZipPackage = async () => {
+    if (!validateHeader()) return;
+
     if (transactions.length === 0) {
       alert("Adicione pelo menos um lançamento.");
       return;
@@ -313,7 +345,7 @@ const App = () => {
               <RefreshCcw size={18} className="group-hover:rotate-180 transition-transform duration-500" /> Reiniciar
             </button>
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl transition-all text-sm shadow-md"
             >
               <Printer size={18} /> Gerar PDF
@@ -361,15 +393,15 @@ const App = () => {
               <h2 className="text-xs font-black uppercase tracking-widest">Informações do Detentor</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <InputField label="Detentor" name="detentor" value={headerData.detentor} onChange={handleHeaderChange} placeholder="Nome Completo" />
-              <InputField label="CPF" name="cpf" value={headerData.cpf} onChange={handleHeaderChange} placeholder="000.000.000-00" />
-              <InputField label="Loja / Unidade" name="loja" type="select" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
+              <InputField label="Detentor" name="detentor" required value={headerData.detentor} onChange={handleHeaderChange} placeholder="Nome Completo" />
+              <InputField label="CPF" name="cpf" required value={headerData.cpf} onChange={handleHeaderChange} placeholder="000.000.000-00" />
+              <InputField label="Loja / Unidade" name="loja" required type="select" value={headerData.loja} onChange={handleHeaderChange} icon={<Store size={14} />} />
               <InputField label="Data Prestação" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={handleHeaderChange} icon={<Calendar size={14} />} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InputField label="Chave PIX (Reembolso)" name="chavePix" value={headerData.chavePix} onChange={handleHeaderChange} icon={<CreditCard size={14} />} />
-              <InputField label="Departamento" name="depto" value={headerData.depto} onChange={handleHeaderChange} />
-              <InputField label="Ajustar Fundo (R$)" name="fundoDisponibilizado" type="number" value={headerData.fundoDisponibilizado} onChange={handleHeaderChange} />
+              <InputField label="Chave PIX (Reembolso)" name="chavePix" required value={headerData.chavePix} onChange={handleHeaderChange} icon={<CreditCard size={14} />} />
+              <InputField label="Departamento" name="depto" required value={headerData.depto} onChange={handleHeaderChange} />
+              <InputField label="Ajustar Fundo (R$)" name="fundoDisponibilizado" required type="number" value={headerData.fundoDisponibilizado} onChange={handleHeaderChange} />
             </div>
           </section>
 
@@ -537,7 +569,7 @@ const StatCard = ({ label, value, icon, trend, trendColor = "text-slate-400", co
 const InputField = ({ label, icon, ...props }) => (
   <div className="flex flex-col gap-2">
     <label className="text-[11px] font-black text-slate-400 uppercase flex items-center gap-2 ml-1 tracking-widest">
-      {icon} {label}
+      {icon} {label} {props.required && <span className="text-red-500">*</span>}
     </label>
     <div className="relative">
       {props.type === 'select' ? (
