@@ -280,9 +280,11 @@ const Generator = ({ onSaveRecord }) => {
 
     setTimeout(async () => {
       try {
+        const sanitizeFileName = (name) => name.replace(/[|&;$%@"<>()+,]/g, "_").replace(/\s+/g, "_");
         const pdfBlob = await generatePDFReport();
         const timestamp = Date.now();
-        const pdfFileName = `relatorios/PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}_${timestamp}.pdf`;
+        const safeLojaName = sanitizeFileName(headerData.loja);
+        const pdfFileName = `relatorios/PRESTACAO_${safeLojaName}_${headerData.dataPrestacao}_${timestamp}.pdf`;
 
         let pdfUrl = null;
 
