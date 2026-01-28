@@ -1,18 +1,26 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Lock } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const Login = ({ onLogin }) => {
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (password === "Minipreco@123") {
-            onLogin();
+        setIsLoading(true);
+        setError(null);
+
+        const { error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (authError) {
+            setError("E-mail ou senha incorretos");
+            setIsLoading(false);
         } else {
-            setError(true);
-            setTimeout(() => setError(false), 2000);
+            onLogin();
         }
     };
 
@@ -35,16 +43,25 @@ const Login = ({ onLogin }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
+                        type="email"
+                        placeholder="E-mail"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-center text-sm font-bold outline-none focus:border-red-500 transition-all"
+                    />
+                    <input
                         type="password"
-                        autoFocus
-                        placeholder="Senha de Acesso"
+                        placeholder="Senha"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`w-full bg-slate-50 border-2 ${error ? 'border-red-500' : 'border-slate-100'} rounded-2xl px-6 py-4 text-center text-lg font-bold outline-none focus:border-red-500 transition-all`}
+                        className={`w-full bg-slate-50 border-2 ${error ? 'border-red-500' : 'border-slate-100'} rounded-2xl px-6 py-4 text-center text-sm font-bold outline-none focus:border-red-500 transition-all`}
                     />
-                    {error && <p className="text-red-500 text-center text-xs font-bold animate-bounce">Senha incorreta!</p>}
-                    <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-black transition-all active:scale-95">
-                        ENTRAR NO PAINEL
+                    {error && <p className="text-red-500 text-center text-xs font-bold">{error}</p>}
+                    <button
+                        disabled={isLoading}
+                        className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-black transition-all active:scale-95 disabled:opacity-50"
+                    >
+                        {isLoading ? "AUTENTICANDO..." : "ENTRAR NO PAINEL"}
                     </button>
                 </form>
             </motion.div>

@@ -7,32 +7,51 @@ import {
 } from 'react-router-dom';
 import { Lock, Send, Loader2 } from 'lucide-react';
 
+import { supabase } from './lib/supabase';
+
 const Generator = React.lazy(() => import('./components/Generator'));
 const HistoryDashboard = React.lazy(() => import('./components/HistoryDashboard'));
 const Login = React.lazy(() => import('./components/Login'));
 
 // --- Componente Raiz (Navegação) ---
 const App = () => {
-  const [history, setHistory] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+
+  useEffect(() => {
+    // 1. Verifica sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAdmin(!!session);
+      setIsLoadingSession(false);
+    });
+
+    // 2. Escuta mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAdmin(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    if (window.confirm("Deseja realmente sair?")) {
+      await supabase.auth.signOut();
+    }
+  };
 
   // Wrapper para proteção de rota
   const ProtectedRoute = ({ children }) => {
+    if (isLoadingSession) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 gap-4">
+          <Loader2 className="animate-spin" size={32} />
+        </div>
+      );
+    }
     if (!isAdmin) {
       return <Login onLogin={() => setIsAdmin(true)} />;
     }
     return children;
-  };
-
-  useEffect(() => {
-    const saved = localStorage.getItem('fundo_history');
-    if (saved) setHistory(JSON.parse(saved));
-  }, []);
-
-  const saveToHistory = (record) => {
-    const newHistory = [record, ...history];
-    setHistory(newHistory);
-    localStorage.setItem('fundo_history', JSON.stringify(newHistory));
   };
 
   return (
@@ -47,12 +66,12 @@ const App = () => {
             </div>
           }>
             <Routes>
-              <Route path="/" element={<Generator onSaveRecord={saveToHistory} />} />
+              <Route path="/" element={<Generator onSaveRecord={() => { }} />} />
               <Route
                 path="/registros"
                 element={
                   <ProtectedRoute>
-                    <HistoryDashboard />
+                    <HistoryDashboard onLogout={handleLogout} />
                   </ProtectedRoute>
                 }
               />
@@ -61,10 +80,10 @@ const App = () => {
 
           <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <p className="text-slate-400 text-xs font-medium tracking-wide">
-              Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noreferrer" className="text-red-600 font-black hover:underline">Allan Anjos</a>
+              Desenvolvido com muito café por: <a href="https://allananjos.dev.br/" target="_blank" rel="noreferrer" className="text-red-600 font-black hover:underline">Allan Anjos</a>
             </p>
             <div className="flex items-center justify-center gap-1.5 text-slate-300 text-[9px] font-bold uppercase tracking-widest">
-              <Send size={10} /> Sincronizado via Supabase 🍏
+              Sincronizado via Supabase 🍏
             </div>
 
             {/* Subtle Admin Link */}

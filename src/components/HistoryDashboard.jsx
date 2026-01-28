@@ -12,7 +12,8 @@ import {
     Calendar,
     User,
     Store as StoreIcon,
-    X
+    X,
+    LogOut
 } from 'lucide-react';
 
 import {
@@ -25,7 +26,7 @@ import {
 } from '../lib/supabase';
 import { formatCurrency, maskCurrency, parseCurrency } from '../utils/formatters';
 
-const HistoryDashboard = () => {
+const HistoryDashboard = ({ onLogout }) => {
     const [records, setRecords] = useState([]);
     const [stores, setStores] = useState([]);
     const [activeTab, setActiveTab] = useState('records'); // 'records' | 'stores'
@@ -199,26 +200,26 @@ const HistoryDashboard = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                        <div className="bg-slate-100 p-1 rounded-xl flex gap-1">
-                            <button
-                                onClick={() => setActiveTab('records')}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'records' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                                Registros
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('stores')}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'stores' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                                Lojas
-                            </button>
-                        </div>
+
+                    <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1">
                         <button
-                            onClick={activeTab === 'records' ? loadRecords : loadStores}
-                            className="flex items-center justify-center gap-2 bg-slate-100 text-slate-600 px-4 py-2.5 rounded-xl text-[10px] font-black hover:bg-slate-200 transition-all uppercase tracking-widest"
+                            onClick={() => setActiveTab('records')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'records' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                            <RefreshCcw size={12} className={isLoading ? "animate-spin" : ""} />
+                            <FileArchive size={14} /> REGISTROS
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('stores')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'stores' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <StoreIcon size={14} /> LOJAS
+                        </button>
+                        <div className="w-px h-6 bg-slate-200 mx-1 self-center"></div>
+                        <button
+                            onClick={onLogout}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-red-500 hover:bg-red-50 transition-all"
+                        >
+                            <LogOut size={14} /> SAIR
                         </button>
                     </div>
                 </div>
