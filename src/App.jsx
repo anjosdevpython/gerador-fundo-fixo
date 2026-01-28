@@ -86,7 +86,7 @@ const App = () => {
 
           <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <div className="flex items-center justify-center gap-1.5 text-slate-300 text-[10px] font-bold uppercase tracking-widest italic">
-              Desenvolvido com muito café ☕
+              Desenvolvido com muito café ☕ por <a href="https://allananjos.dev.br/" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-red-600 transition-colors not-italic">Allan Anjos</a>
             </div>
 
             {/* Subtle Admin Link */}
