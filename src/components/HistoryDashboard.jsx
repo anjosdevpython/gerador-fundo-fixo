@@ -13,7 +13,8 @@ import {
     User,
     Store as StoreIcon,
     X,
-    LogOut
+    LogOut,
+    Download
 } from 'lucide-react';
 
 import {
@@ -32,7 +33,9 @@ const HistoryDashboard = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState('records'); // 'records' | 'stores'
     const [isLoading, setIsLoading] = useState(true);
     const [isDownloadingZip, setIsDownloadingZip] = useState(null);
+    const [isDownloadingBulk, setIsDownloadingBulk] = useState(false);
     const [isDeleting, setIsDeleting] = useState(null);
+    const [selectedRecordIds, setSelectedRecordIds] = useState([]);
 
     // Store Management State
     const [isEditingStore, setIsEditingStore] = useState(null);
@@ -142,31 +145,7 @@ const HistoryDashboard = ({ onLogout }) => {
         try {
             const JSZip = (await import('jszip')).default;
             const zip = new JSZip();
-
-            // Download e adicionar PDF
-            if (record.pdf_url) {
-                const pdfResp = await fetch(record.pdf_url);
-                const pdfBlob = await pdfResp.blob();
-                zip.file(`RELATORIO_${record.loja}_${record.id}.pdf`, pdfBlob);
-            }
-
-            // Download e adicionar anexos
-            const folder = zip.folder("comprovantes");
-            const transacoes = record.transacoes || [];
-
-            for (const t of transacoes) {
-                if (t.attachments && Array.isArray(t.attachments)) {
-                    for (const att of t.attachments) {
-                        try {
-                            const resp = await fetch(att.url);
-                            const blob = await resp.blob();
-                            folder.file(`item_${t.id}_${att.name}`, blob);
-                        } catch (e) {
-                            console.error(`Erro ao baixar anexo ${att.name}:`, e);
-                        }
-                    }
-                }
-            }
+            await addRecordToZip(zip, record);
 
             const content = await zip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
@@ -178,6 +157,84 @@ const HistoryDashboard = ({ onLogout }) => {
             alert("Erro ao baixar arquivos.");
         } finally {
             setIsDownloadingZip(null);
+        }
+    };
+
+    const addRecordToZip = async (zipObj, record, folderName = null) => {
+        const root = folderName ? zipObj.folder(folderName) : zipObj;
+
+        // Download e adicionar PDF
+        if (record.pdf_url) {
+            try {
+                const pdfResp = await fetch(record.pdf_url);
+                const pdfBlob = await pdfResp.blob();
+                root.file(`RELATORIO_${record.loja}_${record.id}.pdf`, pdfBlob);
+            } catch (e) {
+                console.error(`Erro ao baixar PDF para registro ${record.id}:`, e);
+            }
+        }
+
+        // Download e adicionar anexos
+        const folder = root.folder("comprovantes");
+        const transacoes = record.transacoes || [];
+
+        for (const t of transacoes) {
+            if (t.attachments && Array.isArray(t.attachments)) {
+                for (const att of t.attachments) {
+                    try {
+                        const resp = await fetch(att.url);
+                        const blob = await resp.blob();
+                        folder.file(`item_${t.id}_${att.name}`, blob);
+                    } catch (e) {
+                        console.error(`Erro ao baixar anexo ${att.name}:`, e);
+                    }
+                }
+            }
+        }
+    };
+
+    const downloadSelectedAsZip = async () => {
+        if (selectedRecordIds.length === 0) return;
+        setIsDownloadingBulk(true);
+
+        try {
+            const JSZip = (await import('jszip')).default;
+            const zip = new JSZip();
+
+            const selectedRecords = records.filter(r => selectedRecordIds.includes(r.id));
+
+            for (const record of selectedRecords) {
+                const cleanLoja = record.loja.replace(/[^a-z0-9]/gi, '_');
+                const folderName = `${record.id}_${cleanLoja}`;
+                await addRecordToZip(zip, record, folderName);
+            }
+
+            const content = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = `LOTE_PRESTACOES_${new Date().toISOString().split('T')[0]}.zip`;
+            link.click();
+
+            setSelectedRecordIds([]);
+        } catch (e) {
+            console.error("Erro ao gerar ZIP em lote:", e);
+            alert("Erro ao baixar lote de arquivos.");
+        } finally {
+            setIsDownloadingBulk(false);
+        }
+    };
+
+    const toggleRecordSelection = (id) => {
+        setSelectedRecordIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedRecordIds.length === filteredRecords.length && filteredRecords.length > 0) {
+            setSelectedRecordIds([]);
+        } else {
+            setSelectedRecordIds(filteredRecords.map(r => r.id));
         }
     };
 
@@ -302,6 +359,17 @@ const HistoryDashboard = ({ onLogout }) => {
                             >
                                 <Trash2 size={12} /> Limpeza Manual ({">"} 30 dias)
                             </button>
+
+                            {selectedRecordIds.length > 0 && (
+                                <button
+                                    onClick={downloadSelectedAsZip}
+                                    disabled={isDownloadingBulk}
+                                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+                                >
+                                    {isDownloadingBulk ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                                    Baixar Selecionados ({selectedRecordIds.length})
+                                </button>
+                            )}
                             {filteredRecords.length > 0 && filteredRecords.length < records.length && (
                                 <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -408,6 +476,14 @@ const HistoryDashboard = ({ onLogout }) => {
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 border-b">
                                 <tr>
+                                    <th className="px-6 py-4 w-10">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                            checked={filteredRecords.length > 0 && selectedRecordIds.length === filteredRecords.length}
+                                            onChange={toggleSelectAll}
+                                        />
+                                    </th>
                                     <th className="px-6 py-4">Data/Hora</th>
                                     <th className="px-6 py-4">Loja / Unidade</th>
                                     <th className="px-6 py-4">Detentor</th>
@@ -429,7 +505,15 @@ const HistoryDashboard = ({ onLogout }) => {
                                     </td></tr>
                                 ) : (
                                     filteredRecords.map(r => (
-                                        <tr key={r.id} className="hover:bg-slate-50 transition-colors group">
+                                        <tr key={r.id} className={`hover:bg-slate-50 transition-colors group ${selectedRecordIds.includes(r.id) ? 'bg-red-50/20' : ''}`}>
+                                            <td className="px-6 py-4">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                                    checked={selectedRecordIds.includes(r.id)}
+                                                    onChange={() => toggleRecordSelection(r.id)}
+                                                />
+                                            </td>
                                             <td className="px-6 py-4 text-[10px] font-bold text-slate-500">
                                                 {new Date(r.created_at).toLocaleString('pt-BR')}
                                             </td>
