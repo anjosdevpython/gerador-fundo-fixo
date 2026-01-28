@@ -22,7 +22,10 @@ export const InputField = ({ label, icon, ...props }) => (
         <div className="relative group">
             <input
                 {...props}
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 md:px-5 py-3 md:py-4 text-xs md:text-sm font-bold focus:outline-none focus:border-slate-900 transition-all placeholder:text-slate-300 pr-10 md:pr-12 group-hover:bg-white"
+                className={`w-full border-2 border-slate-100 rounded-2xl px-4 md:px-5 py-3 md:py-4 text-xs md:text-sm font-bold focus:outline-none transition-all placeholder:text-slate-300 pr-10 md:pr-12 
+                    ${props.readOnly
+                        ? 'bg-slate-100/50 cursor-default text-slate-500 border-dashed border-slate-200 focus:border-slate-200'
+                        : 'bg-slate-50 group-hover:bg-white focus:border-slate-900'}`}
             />
         </div>
     </div>

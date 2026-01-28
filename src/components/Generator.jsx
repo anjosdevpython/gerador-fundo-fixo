@@ -330,11 +330,8 @@ const Generator = ({ onSaveRecord }) => {
                         <User size={16} /> <h2 className="text-xs font-black uppercase tracking-widest">Informações Gerais</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <InputField label="Detentor" name="detentor" required value={headerData.detentor} onChange={(e) => setHeaderData({ ...headerData, detentor: e.target.value })} placeholder="Nome Completo" />
-                        <InputField label="CPF" name="cpf" required value={headerData.cpf} onChange={(e) => {
-                            let v = e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').substring(0, 14);
-                            setHeaderData({ ...headerData, cpf: v });
-                        }} placeholder="000.000.000-00" />
+                        <InputField label="Detentor" name="detentor" required readOnly value={headerData.detentor} placeholder="Selecione uma loja..." />
+                        <InputField label="CPF" name="cpf" required readOnly value={headerData.cpf} placeholder="Selecione uma loja..." />
                         <div className="space-y-2">
                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Loja</label>
                             <select
@@ -365,15 +362,15 @@ const Generator = ({ onSaveRecord }) => {
                         <InputField label="Data" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={(e) => setHeaderData({ ...headerData, dataPrestacao: e.target.value })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <InputField label="Chave PIX" name="chavePix" required value={headerData.chavePix} onChange={(e) => setHeaderData({ ...headerData, chavePix: e.target.value })} />
-                        <InputField label="Depto" name="depto" required value={headerData.depto} onChange={(e) => setHeaderData({ ...headerData, depto: e.target.value })} />
+                        <InputField label="Chave PIX" name="chavePix" required readOnly value={headerData.chavePix} placeholder="Selecione uma loja..." />
+                        <InputField label="Depto" name="depto" required readOnly value={headerData.depto} placeholder="Selecione uma loja..." />
                         <InputField
                             label="Valor Fundo"
                             name="fundoDisponibilizado"
                             required
+                            readOnly
                             type="text"
                             value={maskCurrency(headerData.fundoDisponibilizado)}
-                            onChange={(e) => setHeaderData({ ...headerData, fundoDisponibilizado: parseCurrency(e.target.value) })}
                         />
                     </div>
                 </section>
