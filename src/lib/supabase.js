@@ -148,3 +148,57 @@ export const deleteRecord = async (recordId, pdfUrl, transacoes) => {
         return { success: false, error };
     }
 };
+
+/**
+ * Busca todas as lojas cadastradas.
+ */
+export const fetchStores = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('lojas')
+            .select('*')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error) {
+        console.error('Erro ao buscar lojas:', error);
+        return { data: null, error };
+    }
+};
+
+/**
+ * Salva ou atualiza uma loja.
+ */
+export const saveStore = async (storeData) => {
+    try {
+        const { data, error } = await supabase
+            .from('lojas')
+            .upsert([storeData])
+            .select();
+
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error) {
+        console.error('Erro ao salvar loja:', error);
+        return { data: null, error };
+    }
+};
+
+/**
+ * Deleta uma loja.
+ */
+export const deleteStore = async (storeId) => {
+    try {
+        const { error } = await supabase
+            .from('lojas')
+            .delete()
+            .eq('id', storeId);
+
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Erro ao excluir loja:', error);
+        return { success: false, error };
+    }
+};
