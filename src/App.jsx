@@ -11,7 +11,23 @@ import { supabase } from './lib/supabase';
 
 const Generator = React.lazy(() => import('./components/Generator'));
 const HistoryDashboard = React.lazy(() => import('./components/HistoryDashboard'));
-const Login = React.lazy(() => import('./components/Login'));
+import Login from './components/Login';
+
+// Wrapper para proteção de rota
+const ProtectedRoute = ({ isAdmin, isLoadingSession, onLogin, children }) => {
+  if (isLoadingSession) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 gap-4">
+        <Loader2 className="animate-spin" size={32} />
+        <p className="text-[10px] font-black uppercase tracking-widest">Verificando Acesso...</p>
+      </div>
+    );
+  }
+  if (!isAdmin) {
+    return <Login onLogin={onLogin} />;
+  }
+  return children;
+};
 
 // --- Componente Raiz (Navegação) ---
 const App = () => {
@@ -20,10 +36,18 @@ const App = () => {
 
   useEffect(() => {
     // 1. Verifica sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAdmin(!!session);
-      setIsLoadingSession(false);
-    });
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAdmin(!!session);
+      } catch (err) {
+        console.error("Erro ao recuperar sessão:", err);
+      } finally {
+        setIsLoadingSession(false);
+      }
+    };
+
+    checkSession();
 
     // 2. Escuta mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -34,24 +58,9 @@ const App = () => {
   }, []);
 
   const handleLogout = async () => {
-    if (window.confirm("Deseja realmente sair?")) {
+    if (window.confirm("Deseja realmente sair do painel?")) {
       await supabase.auth.signOut();
     }
-  };
-
-  // Wrapper para proteção de rota
-  const ProtectedRoute = ({ children }) => {
-    if (isLoadingSession) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 gap-4">
-          <Loader2 className="animate-spin" size={32} />
-        </div>
-      );
-    }
-    if (!isAdmin) {
-      return <Login onLogin={() => setIsAdmin(true)} />;
-    }
-    return children;
   };
 
   return (
@@ -62,15 +71,30 @@ const App = () => {
           <React.Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 gap-4">
               <Loader2 className="animate-spin" size={32} />
-              <p className="text-xs font-black uppercase tracking-widest">Carregando...</p>
+              <p className="text-xs font-black uppercase tracking-widest text-[#64748b]">Carregando...</p>
             </div>
           }>
             <Routes>
-              <Route path="/" element={<Generator onSaveRecord={() => { }} />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute
+                    isAdmin={isAdmin}
+                    isLoadingSession={isLoadingSession}
+                    onLogin={() => setIsAdmin(true)}
+                  >
+                    <Generator onSaveRecord={() => null} />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/registros"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute
+                    isAdmin={isAdmin}
+                    isLoadingSession={isLoadingSession}
+                    onLogin={() => setIsAdmin(true)}
+                  >
                     <HistoryDashboard onLogout={handleLogout} />
                   </ProtectedRoute>
                 }
