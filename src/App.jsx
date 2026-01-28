@@ -37,6 +37,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { supabase, cleanupOldRecords, fetchRecords } from './lib/supabase';
+
 
 // --- Configurações SharePoint ---
 const SHAREPOINT_WEBHOOK_URL = ""; // Usuário deve preencher no futuro ou via painel
@@ -264,77 +266,113 @@ const Generator = ({ onSaveRecord }) => {
     });
   };
 
-  const handleSharePointSync = async () => {
+  const handleSupabaseSync = async () => {
     if (!validateHeader()) return;
 
-    if (!SHAREPOINT_WEBHOOK_URL) {
-      alert("Atenção: A URL do Webhook do SharePoint não está configurada no código. O registro será salvo apenas no histórico local.");
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      alert("Atenção: As credenciais do Supabase não estão configuradas no arquivo .env.");
     }
 
     setIsSyncingSharePoint(true);
 
-    // Pequeno delay para permitir que o navegador renderize o estado de "loading" antes da tarefa pesada
+    // Auto-limpeza: Remove registros com mais de 120 dias para manter plano gratuito
+    try { await cleanupOldRecords(120); } catch (e) { console.warn('Falha na limpeza automática:', e); }
+
     setTimeout(async () => {
       try {
         const pdfBlob = await generatePDFReport();
+        const timestamp = Date.now();
+        const pdfFileName = `relatorios/PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}_${timestamp}.pdf`;
 
-        let syncStatus = 'Pending';
+        let pdfUrl = null;
 
-        // Tenta sincronização real
-        if (SHAREPOINT_WEBHOOK_URL) {
-          const base64Content = await blobToBase64(pdfBlob);
-          const response = await fetch(SHAREPOINT_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              fileName: `PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}.pdf`,
-              fileContent: base64Content,
-              detentor: headerData.detentor,
-              loja: headerData.loja,
-              valorTotal: totals.utilizado,
-              data: headerData.dataPrestacao
-            })
-          });
+        // 1. Upload PDF to Storage
+        const { data: pdfData, error: pdfError } = await supabase.storage
+          .from('prestacoes')
+          .upload(pdfFileName, pdfBlob);
 
-          if (!response.ok) throw new Error(`Falha no SharePoint: ${response.statusText}`);
-          syncStatus = 'Synced';
-        } else {
-          // Fallback para servidor local (Auto-Hospedagem)
-          try {
-            const base64Content = await blobToBase64(pdfBlob);
-            const response = await fetch('/api/save', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fileName: `PRESTACAO_${headerData.loja}_${headerData.dataPrestacao}.pdf`,
-                fileContent: base64Content,
-                detentor: headerData.detentor,
-                loja: headerData.loja
-              })
-            });
+        if (pdfError) throw new Error(`Erro ao enviar PDF: ${pdfError.message}`);
 
-            if (response.ok) {
-              syncStatus = 'Synced';
-              alert("Relatório salvo diretamente no servidor!");
+        const { data: { publicUrl: pdfPublicUrl } } = supabase.storage
+          .from('prestacoes')
+          .getPublicUrl(pdfFileName);
+
+        pdfUrl = pdfPublicUrl;
+
+        // 2. Upload Attachments to Storage
+        const attachmentUrls = [];
+        for (const t of transactions) {
+          const tAttachments = [];
+          for (const file of t.attachments) {
+            const fileName = `anexos/${timestamp}_${t.id}_${file.name}`;
+            const { error: uploadError } = await supabase.storage
+              .from('prestacoes')
+              .upload(fileName, file);
+
+            if (uploadError) {
+              console.error(`Erro ao enviar anexo ${file.name}:`, uploadError);
+            } else {
+              const { data: { publicUrl } } = supabase.storage
+                .from('prestacoes')
+                .getPublicUrl(fileName);
+              tAttachments.push({ name: file.name, url: publicUrl });
             }
-          } catch (e) {
-            console.warn("Servidor local não encontrado, salvando apenas em cache.");
           }
+          attachmentUrls.push({ transactionId: t.id, files: tAttachments });
         }
 
+        // 3. Save Record to Database
+        const { data: recordData, error: dbError } = await supabase
+          .from('prestacoes')
+          .insert([
+            {
+              loja: headerData.loja,
+              detentor: headerData.detentor,
+              cpf: headerData.cpf,
+              chave_pix: headerData.chavePix,
+              depto: headerData.depto,
+              valor_fundo: headerData.fundoDisponibilizado,
+              valor_utilizado: totals.utilizado,
+              saldo: totals.saldo,
+              data_prestacao: headerData.dataPrestacao,
+              pdf_url: pdfUrl,
+              transacoes: transactions.map(t => ({
+                ...t,
+                attachments: attachmentUrls.find(a => a.transactionId === t.id)?.files || []
+              }))
+            }
+          ])
+          .select();
+
+        if (dbError) throw new Error(`Erro ao salvar no banco: ${dbError.message}`);
+
         const record = {
-          id: Date.now(),
+          id: recordData[0].id,
           header: headerData,
           total: totals.utilizado,
           timestamp: new Date().toLocaleString('pt-BR'),
-          status: syncStatus
+          status: 'Synced',
+          pdfUrl: pdfUrl
         };
 
         onSaveRecord(record);
-        alert(SHAREPOINT_WEBHOOK_URL ? "Relatório enviado ao SharePoint com sucesso!" : "Salvo no histórico local (Webhook ausente).");
+        alert("Prestação salva com sucesso no Banco de Dados!");
+
+        // Limpar campos para próximo registro (mantendo dados fixos se desejar, ou limpando tudo)
+        setHeaderData(prev => ({
+          ...initialHeader,
+          loja: prev.loja, // Mantém a loja para facilitar
+          detentor: prev.detentor, // Mantém o detentor
+          cpf: prev.cpf,
+          depto: prev.depto,
+          fundoDisponibilizado: prev.fundoDisponibilizado
+        }));
+        setTransactions([]);
+        localStorage.removeItem('fundo_transactions');
+
       } catch (e) {
         console.error("Erro crítico na sincronização:", e);
-        alert("Erro na sincronização: " + (e.message || "Erro desconhecido"));
+        alert("Erro ao salvar: " + (e.message || "Erro desconhecido"));
       } finally {
         setIsSyncingSharePoint(false);
       }
@@ -381,7 +419,7 @@ const Generator = ({ onSaveRecord }) => {
             <Printer size={16} /> Imprimir
           </button>
           <button
-            onClick={handleSharePointSync}
+            onClick={handleSupabaseSync}
             disabled={isSyncingSharePoint}
             className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all font-sans disabled:opacity-50"
           >
@@ -390,7 +428,7 @@ const Generator = ({ onSaveRecord }) => {
             ) : (
               <Send size={14} />
             )}
-            {SHAREPOINT_WEBHOOK_URL ? "Sincronizar SharePoint" : "Sincronizar Servidor"}
+            {"Salvar no Banco"}
           </button>
           <button onClick={generateZipPackage} disabled={isProcessingZip} className="w-full md:w-auto flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-red-100 hover:bg-red-700 transition-all font-sans">
             {isProcessingZip ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
@@ -494,28 +532,111 @@ const Generator = ({ onSaveRecord }) => {
           <p className="text-center text-[8px] text-slate-300 mt-20">Relatório gerado digitalmente em {new Date().toLocaleString('pt-BR')}</p>
         </section>
       </div>
-    </div>
+    </div >
   );
 };
 
 // --- Componente: Histórico ---
-const HistoryDashboard = ({ records }) => {
+const HistoryDashboard = () => {
+  const [records, setRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(null);
+
   const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const loadRecords = async () => {
+    setIsLoading(true);
+    const { data, error } = await fetchRecords();
+    if (!error) setRecords(data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
+  const downloadAllAttachments = async (record) => {
+    setIsDownloadingZip(record.id);
+    try {
+      const zip = new JSZip();
+
+      // Download e adicionar PDF
+      if (record.pdf_url) {
+        const pdfResp = await fetch(record.pdf_url);
+        const pdfBlob = await pdfResp.blob();
+        zip.file(`RELATORIO_${record.loja}_${record.id}.pdf`, pdfBlob);
+      }
+
+      // Download e adicionar anexos
+      const folder = zip.folder("comprovantes");
+      const transacoes = record.transacoes || [];
+
+      for (const t of transacoes) {
+        if (t.attachments && Array.isArray(t.attachments)) {
+          for (const att of t.attachments) {
+            try {
+              const resp = await fetch(att.url);
+              const blob = await resp.blob();
+              folder.file(`item_${t.id}_${att.name}`, blob);
+            } catch (e) {
+              console.error(`Erro ao baixar anexo ${att.name}:`, e);
+            }
+          }
+        }
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = `ARQUIVOS_${record.loja}_${record.id}.zip`;
+      link.click();
+    } catch (e) {
+      console.error("Erro ao gerar ZIP de download:", e);
+      alert("Erro ao baixar arquivos.");
+    } finally {
+      setIsDownloadingZip(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-red-50 rounded-2xl">
-            <History className="text-red-600" size={24} />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-50 rounded-2xl">
+              <History className="text-red-600" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-slate-800">Painel de Registros</h1>
+              <p className="text-slate-500 text-xs font-medium">Histórico global de prestações sincronizadas no Supabase</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-800">Painel de Registros</h1>
-            <p className="text-slate-500 text-xs font-medium">Histórico global de prestações sincronizadas</p>
-          </div>
+          <button
+            onClick={loadRecords}
+            className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black hover:bg-slate-200 transition-all"
+          >
+            <RefreshCcw size={12} className={isLoading ? "animate-spin" : ""} /> Atualizar
+          </button>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={async () => {
+              if (window.confirm("Deseja remover todos os registros e arquivos com mais de 30 dias?")) {
+                const { success, deletedCount } = await cleanupOldRecords(30);
+                if (success) {
+                  alert(`${deletedCount} registros removidos com sucesso!`);
+                  loadRecords();
+                }
+                else alert("Erro ao executar limpeza.");
+              }
+            }}
+            className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-black transition-all"
+          >
+            <Trash2 size={12} /> Limpeza Manual ({">"} 30 dias)
+          </button>
         </div>
       </header>
-      {/* ... Rest logic remains same, just styling refinements if needed ... */}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -526,28 +647,50 @@ const HistoryDashboard = ({ records }) => {
                 <th className="px-6 py-4">Detentor</th>
                 <th className="px-6 py-4 text-right">Valor Total</th>
                 <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4"></th>
+                <th className="px-6 py-4">Arquivos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {records.length === 0 ? (
-                <tr><td colSpan="6" className="p-16 text-center text-slate-400 italic font-medium">Nenhum registro encontrado localmente.</td></tr>
+              {isLoading ? (
+                <tr><td colSpan="6" className="p-16 text-center text-slate-400 italic font-medium"><Loader2 className="animate-spin mx-auto mb-2" /> Carregando registros...</td></tr>
+              ) : records.length === 0 ? (
+                <tr><td colSpan="6" className="p-16 text-center text-slate-400 italic font-medium">Nenhum registro encontrado no Supabase.</td></tr>
               ) : (
                 records.map(r => (
                   <tr key={r.id} className="hover:bg-slate-50 transition-colors group">
-                    <td className="px-6 py-4 text-xs font-bold text-slate-500">{r.timestamp}</td>
-                    <td className="px-6 py-4 text-xs font-black text-slate-800 uppercase">{r.header.loja}</td>
-                    <td className="px-6 py-4 text-xs font-medium text-slate-500">{r.header.detentor}</td>
-                    <td className="px-6 py-4 text-right text-sm font-black text-red-900 font-mono">{formatCurrency(r.total)}</td>
+                    <td className="px-6 py-4 text-[10px] font-bold text-slate-500">
+                      {new Date(r.created_at).toLocaleString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-black text-slate-800 uppercase">{r.loja}</td>
+                    <td className="px-6 py-4 text-xs font-medium text-slate-500">{r.detentor}</td>
+                    <td className="px-6 py-4 text-right text-sm font-black text-red-900 font-mono">{formatCurrency(r.valor_utilizado)}</td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-[9px] font-black uppercase">
-                        <CheckCircle2 size={12} /> SharePoint
+                        <CheckCircle2 size={12} /> Supabase
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-300 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100">
-                        <ExternalLink size={18} />
-                      </button>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {r.pdf_url && (
+                          <a
+                            href={r.pdf_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Ver PDF"
+                            className="p-2 text-slate-400 hover:text-red-600 transition-all bg-slate-50 rounded-lg"
+                          >
+                            <FileText size={16} />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => downloadAllAttachments(r)}
+                          disabled={isDownloadingZip === r.id}
+                          title="Baixar todos os arquivos (ZIP)"
+                          className="p-2 text-slate-400 hover:text-emerald-600 transition-all bg-slate-50 rounded-lg disabled:opacity-50"
+                        >
+                          {isDownloadingZip === r.id ? <Loader2 size={16} className="animate-spin" /> : <FileArchive size={16} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -646,7 +789,7 @@ const App = () => {
               path="/registros"
               element={
                 <ProtectedRoute>
-                  <HistoryDashboard records={history} />
+                  <HistoryDashboard />
                 </ProtectedRoute>
               }
             />
@@ -655,7 +798,7 @@ const App = () => {
           <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <p className="text-slate-400 text-xs font-medium tracking-wide">Desenvolvido por: <span className="text-red-600 font-black">Allan Anjos</span></p>
             <div className="flex items-center justify-center gap-1.5 text-slate-300 text-[9px] font-bold uppercase tracking-widest">
-              <Send size={10} /> Sincronizado via SharePoint/Power Automate 🍏
+              <Send size={10} /> Sincronizado via Supabase 🍏
             </div>
 
             {/* Subtle Admin Link */}
