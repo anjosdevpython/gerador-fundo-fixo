@@ -37,7 +37,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { supabase, cleanupOldRecords, fetchRecords } from './lib/supabase';
+import { supabase, cleanupOldRecords, fetchRecords, deleteRecord } from './lib/supabase';
 
 
 // --- Configurações SharePoint ---
@@ -543,6 +543,7 @@ const HistoryDashboard = () => {
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloadingZip, setIsDownloadingZip] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(null);
 
   const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -556,6 +557,21 @@ const HistoryDashboard = () => {
   useEffect(() => {
     loadRecords();
   }, []);
+
+  const handleDeleteRecord = async (record) => {
+    if (!window.confirm(`Deseja realmente excluir permanentemente a prestação de "${record.loja}"?`)) return;
+
+    setIsDeleting(record.id);
+    const { success, error } = await deleteRecord(record.id, record.pdf_url, record.transacoes);
+
+    if (success) {
+      setRecords(prev => prev.filter(r => r.id !== record.id));
+      alert("Registro excluído com sucesso!");
+    } else {
+      alert("Erro ao excluir: " + (error?.message || "Erro desconhecido"));
+    }
+    setIsDeleting(null);
+  };
 
   const downloadAllAttachments = async (record) => {
     setIsDownloadingZip(record.id);
@@ -691,6 +707,14 @@ const HistoryDashboard = () => {
                           className="p-2 text-slate-400 hover:text-emerald-600 transition-all bg-slate-50 rounded-lg disabled:opacity-50"
                         >
                           {isDownloadingZip === r.id ? <Loader2 size={16} className="animate-spin" /> : <FileArchive size={16} />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRecord(r)}
+                          disabled={isDeleting === r.id}
+                          title="Excluir Registro"
+                          className="p-2 text-slate-400 hover:text-red-600 transition-all bg-slate-50 rounded-lg disabled:opacity-50"
+                        >
+                          {isDeleting === r.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                         </button>
                       </div>
                     </td>

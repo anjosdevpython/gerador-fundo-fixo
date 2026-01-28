@@ -98,4 +98,53 @@ export const fetchRecords = async () => {
     }
 };
 
+/**
+ * Deleta um único registro e seus arquivos associados.
+ */
+export const deleteRecord = async (recordId, pdfUrl, transacoes) => {
+    try {
+        // 1. Coletar caminhos de arquivos para deletar do Storage
+        const filesToDelete = [];
 
+        // Extrair caminho do PDF
+        if (pdfUrl) {
+            const path = pdfUrl.split('/storage/v1/object/public/prestacoes/')[1];
+            if (path) filesToDelete.push(path);
+        }
+
+        // Extrair caminhos dos anexos
+        if (transacoes && Array.isArray(transacoes)) {
+            transacoes.forEach(t => {
+                if (t.attachments && Array.isArray(t.attachments)) {
+                    t.attachments.forEach(att => {
+                        if (att.url) {
+                            const attPath = att.url.split('/storage/v1/object/public/prestacoes/')[1];
+                            if (attPath) filesToDelete.push(attPath);
+                        }
+                    });
+                }
+            });
+        }
+
+        // 2. Deletar arquivos do Storage
+        if (filesToDelete.length > 0) {
+            const { error: storageError } = await supabase.storage
+                .from('prestacoes')
+                .remove(filesToDelete);
+            if (storageError) console.error('Erro ao deletar arquivos do registro:', storageError);
+        }
+
+        // 3. Deletar registro do Banco de Dados
+        const { error: deleteError } = await supabase
+            .from('prestacoes')
+            .delete()
+            .eq('id', recordId);
+
+        if (deleteError) throw deleteError;
+
+        return { success: true };
+    } catch (error) {
+        console.error('Erro ao excluir registro:', error);
+        return { success: false, error };
+    }
+};
