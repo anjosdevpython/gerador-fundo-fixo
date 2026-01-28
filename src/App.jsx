@@ -9,8 +9,8 @@ import { Lock, Send, Loader2 } from 'lucide-react';
 
 import { supabase } from './lib/supabase';
 
-const Generator = React.lazy(() => import('./components/Generator'));
-const HistoryDashboard = React.lazy(() => import('./components/HistoryDashboard'));
+import Generator from './components/Generator';
+import HistoryDashboard from './components/HistoryDashboard';
 import Login from './components/Login';
 
 // Wrapper para proteção de rota
