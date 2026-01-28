@@ -61,7 +61,7 @@ const App = () => {
 
           <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <p className="text-slate-400 text-xs font-medium tracking-wide">
-              Desenvolvido por: <span className="text-red-600 font-black">Allan Anjos</span>
+              Desenvolvido por: <a href="https://allananjos.dev.br/" target="_blank" rel="noreferrer" className="text-red-600 font-black hover:underline">Allan Anjos</a>
             </p>
             <div className="flex items-center justify-center gap-1.5 text-slate-300 text-[9px] font-bold uppercase tracking-widest">
               <Send size={10} /> Sincronizado via Supabase 🍏
