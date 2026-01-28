@@ -53,7 +53,7 @@ const Login = ({ onLogin }) => {
                         <input
                             type="text"
                             required
-                            placeholder="Ex: Admin"
+                            placeholder="Digite seu usuário"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:border-red-500 transition-all"
