@@ -226,29 +226,63 @@ const Generator = ({ onSaveRecord }) => {
       const element = document.getElementById('print-area');
       if (!element) throw new Error("Área de impressão não encontrada");
 
+      // Salva o estilo original para restaurar depois
+      const originalStyle = element.style.cssText;
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
         allowTaint: true,
+        windowWidth: 1200, // Força largura de desktop para o layout não "quebrar"
         onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById('print-area');
+          if (clonedElement) {
+            clonedElement.style.width = '1200px';
+            clonedElement.style.padding = '40px';
+          }
+
           const elements = clonedDoc.getElementsByTagName('*');
           for (let i = 0; i < elements.length; i++) {
             const el = elements[i];
             const style = window.getComputedStyle(el);
-            // Generalize: strip any color starting with "ok" (oklch, oklab, etc)
+
+            // Corrige cores incompatíveis com html2canvas (oklch etc)
             if (style.color.includes('ok')) el.style.color = '#334155';
             if (style.backgroundColor.includes('ok')) el.style.backgroundColor = '#ffffff';
             if (style.borderColor.includes('ok')) el.style.borderColor = '#e2e8f0';
+
+            // Garante que inputs e selects mostrem o texto completo
+            if (el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+              el.style.border = '1px solid #e2e8f0';
+              el.style.backgroundColor = '#f8fafc';
+            }
           }
         }
       });
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pdfWidth - 20; // 10mm margem cada lado
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Se a imagem for maior que a página, reduzimos para caber
+      let finalWidth = imgWidth;
+      let finalHeight = imgHeight;
+
+      if (finalHeight > pdfHeight - 20) {
+        finalHeight = pdfHeight - 20;
+        finalWidth = (canvas.width * finalHeight) / canvas.height;
+      }
+
+      const xPos = (pdfWidth - finalWidth) / 2;
+      const yPos = 10;
+
+      pdf.addImage(imgData, 'PNG', xPos, yPos, finalWidth, finalHeight);
       return pdf.output('blob');
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
