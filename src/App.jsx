@@ -132,7 +132,7 @@ const Generator = ({ onSaveRecord }) => {
     detentor: '',
     cpf: '',
     loja: '',
-    depto: '',
+    depto: 'Loja',
     chavePix: '',
     fundoDisponibilizado: 0,
     dataPrestacao: new Date().toISOString().split('T')[0]
