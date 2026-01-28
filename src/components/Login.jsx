@@ -3,7 +3,7 @@ import { Lock, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const Login = ({ onLogin }) => {
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -13,6 +13,9 @@ const Login = ({ onLogin }) => {
         setIsLoading(true);
         setError(null);
 
+        // Mapeia o usuário Admin para o e-mail oficial exigido pelo banco
+        const email = username.toLowerCase() === 'admin' ? 'admin@minipreco.com' : username;
+
         try {
             const { error: authError } = await supabase.auth.signInWithPassword({
                 email,
@@ -20,12 +23,12 @@ const Login = ({ onLogin }) => {
             });
 
             if (authError) {
-                setError("E-mail ou senha incorretos");
+                setError("Usuário ou senha incorretos");
             } else {
                 onLogin();
             }
         } catch (err) {
-            setError("Erro ao tentar entrar. Verifique sua conexão.");
+            setError("Erro de conexão. Tente novamente.");
         } finally {
             setIsLoading(false);
         }
@@ -39,20 +42,20 @@ const Login = ({ onLogin }) => {
                         <Lock size={32} />
                     </div>
                     <div className="text-center">
-                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Acesso Restrito</h2>
-                        <p className="text-slate-400 text-sm font-medium">Autenticação Administrativa</p>
+                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Painel Admin</h2>
+                        <p className="text-slate-400 text-sm font-medium">Digite suas credenciais</p>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">E-mail</label>
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Usuário</label>
                         <input
-                            type="email"
+                            type="text"
                             required
-                            placeholder="seu@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Ex: Admin"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:border-red-500 transition-all"
                         />
                     </div>
