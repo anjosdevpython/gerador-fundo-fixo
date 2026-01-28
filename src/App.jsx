@@ -68,28 +68,21 @@ const App = () => {
       <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col items-center">
         {/* Main Content */}
         <main className="w-full max-w-6xl p-4 md:p-8">
-          <React.Suspense fallback={
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 gap-4">
-              <Loader2 className="animate-spin" size={32} />
-              <p className="text-xs font-black uppercase tracking-widest text-[#64748b]">Carregando...</p>
-            </div>
-          }>
-            <Routes>
-              <Route path="/" element={<Generator onSaveRecord={() => null} />} />
-              <Route
-                path="/registros"
-                element={
-                  <ProtectedRoute
-                    isAdmin={isAdmin}
-                    isLoadingSession={isLoadingSession}
-                    onLogin={() => setIsAdmin(true)}
-                  >
-                    <HistoryDashboard onLogout={handleLogout} />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </React.Suspense>
+          <Routes>
+            <Route path="/" element={<Generator onSaveRecord={() => null} />} />
+            <Route
+              path="/registros"
+              element={
+                <ProtectedRoute
+                  isAdmin={isAdmin}
+                  isLoadingSession={isLoadingSession}
+                  onLogin={() => setIsAdmin(true)}
+                >
+                  <HistoryDashboard onLogout={handleLogout} />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
 
           <footer className="mt-12 text-center space-y-2 py-12 border-t border-slate-200/60 relative">
             <p className="text-slate-400 text-xs font-medium tracking-wide">
