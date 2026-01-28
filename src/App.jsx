@@ -75,18 +75,7 @@ const App = () => {
             </div>
           }>
             <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute
-                    isAdmin={isAdmin}
-                    isLoadingSession={isLoadingSession}
-                    onLogin={() => setIsAdmin(true)}
-                  >
-                    <Generator onSaveRecord={() => null} />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/" element={<Generator onSaveRecord={() => null} />} />
               <Route
                 path="/registros"
                 element={
