@@ -18,6 +18,7 @@ import {
 import { supabase, cleanupOldRecords, fetchStores } from '../lib/supabase';
 import { StatCard, InputField } from './Atomic';
 import { formatCurrency, parseCurrency, maskCurrency } from '../utils/formatters';
+import { validatePixKey } from '../utils/pixValidator';
 
 const Generator = ({ onSaveRecord }) => {
     const initialHeader = {
@@ -35,6 +36,7 @@ const Generator = ({ onSaveRecord }) => {
     const [stores, setStores] = useState([]);
     const [isProcessingZip, setIsProcessingZip] = useState(false);
     const [isSyncingSharePoint, setIsSyncingSharePoint] = useState(false);
+    const [pixValidation, setPixValidation] = useState({ valid: true, message: '' });
 
     useEffect(() => {
         const loadStores = async () => {
@@ -64,6 +66,16 @@ const Generator = ({ onSaveRecord }) => {
         const txToSave = transactions.map(({ attachments, ...rest }) => rest);
         localStorage.setItem('fundo_transactions', JSON.stringify(txToSave));
     }, [transactions]);
+
+    // Validação em tempo real do PIX
+    useEffect(() => {
+        if (headerData.chavePix) {
+            const validation = validatePixKey(headerData.chavePix);
+            setPixValidation(validation);
+        } else {
+            setPixValidation({ valid: false, message: 'Chave PIX é obrigatória' });
+        }
+    }, [headerData.chavePix]);
 
     const totals = useMemo(() => {
         const utilizado = transactions.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
@@ -118,6 +130,13 @@ const Generator = ({ onSaveRecord }) => {
         if (fields.some(f => !headerData[f])) { alert("Preencha todos os campos obrigatórios."); return false; }
         if (headerData.fundoDisponibilizado <= 0) { alert("Fundo deve ser > 0."); return false; }
         if (transactions.some(t => t.attachments.length === 0)) { alert("Todos os lançamentos precisam de anexo."); return false; }
+
+        // Validação do PIX
+        if (!pixValidation.valid) {
+            alert(`Chave PIX inválida: ${pixValidation.message}`);
+            return false;
+        }
+
         return true;
     };
 
@@ -362,7 +381,38 @@ const Generator = ({ onSaveRecord }) => {
                         <InputField label="Data" name="dataPrestacao" type="date" value={headerData.dataPrestacao} onChange={(e) => setHeaderData({ ...headerData, dataPrestacao: e.target.value })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <InputField label="Chave PIX" name="chavePix" required readOnly value={headerData.chavePix} placeholder="Selecione uma loja..." />
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                Chave PIX
+                                {headerData.chavePix && (
+                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${pixValidation.valid
+                                            ? 'bg-emerald-50 text-emerald-700'
+                                            : 'bg-red-50 text-red-700'
+                                        }`}>
+                                        {pixValidation.valid ? `✓ ${pixValidation.type}` : '✗ Inválida'}
+                                    </span>
+                                )}
+                            </label>
+                            <input
+                                type="text"
+                                name="chavePix"
+                                required
+                                value={headerData.chavePix}
+                                onChange={(e) => setHeaderData({ ...headerData, chavePix: e.target.value })}
+                                placeholder="CPF, Email, Telefone ou Chave Aleatória"
+                                className={`w-full bg-slate-50 border-2 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none transition-all group-hover:bg-white ${!headerData.chavePix
+                                        ? 'border-slate-100'
+                                        : pixValidation.valid
+                                            ? 'border-emerald-200 focus:border-emerald-500'
+                                            : 'border-red-200 focus:border-red-500'
+                                    }`}
+                            />
+                            {headerData.chavePix && !pixValidation.valid && (
+                                <p className="text-[10px] text-red-600 font-medium pl-1">
+                                    {pixValidation.message}
+                                </p>
+                            )}
+                        </div>
                         <InputField label="Depto" name="depto" required readOnly value={headerData.depto} placeholder="Selecione uma loja..." />
                         <InputField
                             label="Valor Fundo"
